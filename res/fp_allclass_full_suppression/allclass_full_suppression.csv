@@ -1,0 +1,18 @@
+event_type,n,in_label_map,class_idx,eval_head,suppressor_target,baseline_raw_alerts,baseline_raw_rate_pct,baseline_post_alerts,baseline_post_rate_pct,baseline_supp_gain_pct,finetuned_raw_alerts,finetuned_raw_rate_pct,finetuned_post_alerts,finetuned_post_rate_pct,finetuned_supp_gain_pct
+Atrial Fibrillation,200,True,5,Atrial Fibrillation,Atrial Fibrillation,142,71.0,0.0,0.0,100.0,94,47.0,0.0,0.0,100.0
+Isolated Supraventricular Beat,200,True,16,Isolated Supraventricular Beat,none,23,11.5,,,,80,40.0,,,
+Isolated Ventricular Beat,200,True,9,Isolated Ventricular Beat,none,62,31.0,,,,139,69.5,,,
+Pause,200,True,143,Pause,none,0,0.0,,,,0,0.0,,,
+Prolonged RR Interval,17,True,81,Prolonged RR Interval,none,0,0.0,,,,0,0.0,,,
+Sinus Tachycardia,200,True,6,Sinus Tachycardia,none,199,99.5,,,,200,100.0,,,
+Supraventricular Couplet,200,True,20,Supraventricular Couplet,none,3,1.5,,,,9,4.5,,,
+Ventricular Couplet,200,True,91,Ventricular Couplet,none,0,0.0,,,,1,0.5,,,
+Ventricular Run,200,True,99,Ventricular Run,none,0,0.0,,,,0,0.0,,,
+Bradycardia,200,False,5,Bradycardia → AFib head,Bradycardia,139,69.5,24.0,12.0,82.73381294964028,113,56.5,17.0,8.5,84.95575221238938
+Custom Heart Rate,22,False,5,Custom Heart Rate → AFib head,none,18,81.81818181818181,,,,12,54.54545454545455,,,
+Multiple Event,200,False,5,Multiple Event → AFib head,none,116,58.0,,,,101,50.5,,,
+Supraventricular Bigeminy,1,False,5,Supraventricular Bigeminy → AFib head,none,0,0.0,,,,0,0.0,,,
+Supraventricular Run,200,False,5,Supraventricular Run → AFib head,none,96,48.0,,,,84,42.0,,,
+Supraventricular Trigeminy,200,False,5,Supraventricular Trigeminy → AFib head,Supraventricular Trigeminy,71,35.5,6.0,3.0,91.54929577464789,29,14.5,4.0,2.0,86.20689655172414
+Ventricular Tachycardia,1,False,5,Ventricular Tachycardia → AFib head,none,1,100.0,,,,1,100.0,,,
+Ventricular Trigeminy,200,False,5,Ventricular Trigeminy → AFib head,Ventricular Trigeminy,116,58.0,1.0,0.5,99.13793103448276,53,26.5,1.0,0.5,98.11320754716981

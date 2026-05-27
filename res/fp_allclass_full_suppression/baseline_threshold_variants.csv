@@ -1,0 +1,18 @@
+event_type,n,in_label_map,class_idx,suppressor_target,bs_0.5_raw_alerts,bs_0.5_raw_rate_pct,bs_0.5_post_alerts,bs_0.5_post_rate_pct,bs_0.5_supp_gain_pct,bs_0.6_raw_alerts,bs_0.6_raw_rate_pct,bs_0.6_post_alerts,bs_0.6_post_rate_pct,bs_0.6_supp_gain_pct,bs_0.7_raw_alerts,bs_0.7_raw_rate_pct,bs_0.7_post_alerts,bs_0.7_post_rate_pct,bs_0.7_supp_gain_pct
+Atrial Fibrillation,200,True,5,Atrial Fibrillation,142,71.0,0,0.0,100.0,119,59.5,0,0.0,100.0,82,41.0,0,0.0,100.0
+Isolated Supraventricular Beat,200,True,16,none,23,11.5,23,11.5,0.0,15,7.5,15,7.5,0.0,10,5.0,10,5.0,0.0
+Isolated Ventricular Beat,200,True,9,none,62,31.0,62,31.0,0.0,50,25.0,50,25.0,0.0,37,18.5,37,18.5,0.0
+Pause,200,True,143,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Prolonged RR Interval,17,True,81,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Sinus Tachycardia,200,True,6,none,199,99.5,199,99.5,0.0,199,99.5,199,99.5,0.0,197,98.5,197,98.5,0.0
+Supraventricular Couplet,200,True,20,none,3,1.5,3,1.5,0.0,1,0.5,1,0.5,0.0,1,0.5,1,0.5,0.0
+Ventricular Couplet,200,True,91,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Ventricular Run,200,True,99,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Bradycardia,200,False,5,Bradycardia,139,69.5,24,12.0,82.73381294964028,127,63.5,21,10.5,83.46456692913385,103,51.5,17,8.5,83.49514563106796
+Custom Heart Rate,22,False,5,none,18,81.81818181818181,18,81.81818181818181,0.0,17,77.27272727272727,17,77.27272727272727,0.0,11,50.0,11,50.0,0.0
+Multiple Event,200,False,5,none,116,58.0,116,58.0,0.0,106,53.0,106,53.0,0.0,87,43.5,87,43.5,0.0
+Supraventricular Bigeminy,1,False,5,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Supraventricular Run,200,False,5,none,96,48.0,96,48.0,0.0,83,41.5,83,41.5,0.0,72,36.0,72,36.0,0.0
+Supraventricular Trigeminy,200,False,5,Supraventricular Trigeminy,71,35.5,6,3.0,91.54929577464789,61,30.5,5,2.5,91.80327868852459,41,20.5,5,2.5,87.8048780487805
+Ventricular Tachycardia,1,False,5,none,1,100.0,1,100.0,0.0,1,100.0,1,100.0,0.0,1,100.0,1,100.0,0.0
+Ventricular Trigeminy,200,False,5,Ventricular Trigeminy,116,58.0,1,0.5,99.13793103448276,90,45.0,1,0.5,98.88888888888889,65,32.5,1,0.5,98.46153846153847
