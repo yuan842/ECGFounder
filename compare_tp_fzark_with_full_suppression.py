@@ -14,43 +14,29 @@ For each threshold (0.5, 0.6, 0.7):
   - A detected TP that the suppressor suppresses is a "TP loss"  (want: low)
 """
 from __future__ import annotations
-import os, json, argparse
+import os, argparse
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from scipy.signal import medfilt, iirnotch, filtfilt, butter
-from scipy.interpolate import interp1d
 
-from net1d import Net1D
 from multiclass_fp_suppression import MultiClassFPSuppressor, ACTIVE_RULES
 from device_utils import resolve_device
+from preprocessing import ECGPreprocessor, TARGET_LEN
+from checkpoints import load_ecgfounder
+from label_config import FZARK_LABEL_MAP as LABEL_MAP
 
 # ─── Config ─────────────────────────────────────────────────────────────────
 DATA_DIR        = "./data/ecg_tp_fzark"
 SUMMARY_CSV     = "./data/ecg_tp_fzark/summary.csv"
 BASELINE_CKPT   = "./checkpoint/1_lead_ECGFounder.pth"
-FINETUNED_CKPT  = "./checkpoint/finetuned_afib_model.pth"
 OUT_DIR         = "./res/tp_fzark_full_suppression"
 
-# ECGFounder 150-class index used for each native event-type
-LABEL_MAP = {
-    "Atrial Fibrillation":            5,
-    "Isolated Ventricular Beat":      9,
-    "Prolonged RR Interval":         81,
-    "Ventricular Couplet":           91,
-    "Ventricular Run":               99,
-    "Pause":                        143,
-    "Sinus Tachycardia":              6,
-    "Supraventricular Couplet":      20,
-    "Isolated Supraventricular Beat":16,
-}
 AFIB_IDX = 5
 
 MODEL_THRESHOLDS = {
     "baseline":   0.5,
-    "finetuned":  0.2646,
 }
 
 # Baseline threshold variants for sensitivity analysis
@@ -59,66 +45,24 @@ BASELINE_THRESHOLD_VARIANTS = [0.5, 0.6, 0.7]
 # Per-class suppression — which event types have an active v2 filter rule
 SUPPRESSED_EVENTS = set(ACTIVE_RULES.keys())  # AFib, Bradycardia, SV Trigeminy, V Trigeminy
 
-# Pre-processing constants
-FS_IN, FS_OUT  = 128, 500
-TARGET_LEN     = 5000
-MAGNIFICATION  = 1000
-POWERLINE_HZ   = 50
-WIN_LIMITS     = (1.5, 98.5)
 BATCH_SIZE     = 64
-
-
-def load_json_ecg(json_path: str) -> np.ndarray:
-    with open(json_path) as f:
-        records = json.load(f)
-    raw = np.concatenate([np.array(r['data']['ecg'], dtype=np.float32)
-                          for r in records])
-    return raw / MAGNIFICATION
-
-def robust_preprocess(signal_1d: np.ndarray, fs_in: int = FS_IN) -> torch.Tensor:
-    x = signal_1d[np.newaxis, :]
-    b, a = iirnotch(POWERLINE_HZ, 30, fs_in); x = filtfilt(b, a, x, axis=1)
-    b, a = butter(4, [0.67, 40.0], btype='bandpass', fs=fs_in); x = filtfilt(b, a, x, axis=1)
-    kernel = int(0.4 * fs_in) | 1
-    baseline = medfilt(x[0], kernel_size=kernel); x[0] = x[0] - baseline
-    t = x.shape[1] / fs_in
-    x_old = np.linspace(0, t, num=x.shape[1], endpoint=True)
-    x_new = np.linspace(0, t, num=int(t * FS_OUT), endpoint=True)
-    f = interp1d(x_old, x[0], kind='linear', bounds_error=False, fill_value=0.0)
-    sig = f(x_new)
-    if len(sig) >= TARGET_LEN:
-        s = (len(sig) - TARGET_LEN) // 2; sig = sig[s:s + TARGET_LEN]
-    else:
-        pad = TARGET_LEN - len(sig); sig = np.pad(sig, (pad // 2, pad - pad // 2))
-    lo, hi = np.percentile(sig, WIN_LIMITS); sig = np.clip(sig, lo, hi)
-    sig = (sig - sig.mean()) / (sig.std() + 1e-8)
-    return torch.from_numpy(sig.astype(np.float32))[None, :]
 
 
 class TpDataset(Dataset):
     def __init__(self, df, data_dir):
-        self.df = df.reset_index(drop=True); self.data_dir = data_dir
+        self.df = df.reset_index(drop=True)
+        self.data_dir = data_dir
+        self.prep = ECGPreprocessor.for_fzark()
     def __len__(self): return len(self.df)
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
         rel = str(row['JSON File']).replace('\\', '/')
         path = os.path.join(self.data_dir, rel)
         try:
-            sig = load_json_ecg(path); tensor = robust_preprocess(sig)
+            tensor = self.prep.from_fzark_json(path)
         except Exception:
             tensor = torch.zeros(1, TARGET_LEN)
         return tensor, idx
-
-
-def build_model(ckpt_path, device):
-    m = Net1D(in_channels=1, base_filters=64, ratio=1,
-              filter_list=[64, 160, 160, 400, 400, 1024, 1024],
-              m_blocks_list=[2,2,2,3,3,4,4], kernel_size=16, stride=2,
-              groups_width=16, verbose=False, use_bn=False, use_do=False, n_classes=150)
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    sd = ckpt['state_dict'] if isinstance(ckpt, dict) and 'state_dict' in ckpt else ckpt
-    m.load_state_dict(sd)
-    return m.to(device).eval()
 
 
 @torch.no_grad()
@@ -137,7 +81,12 @@ def main():
                     help='Max samples per event type (0 = all)')
     ap.add_argument('--device', default=None)
     ap.add_argument('--seed', type=int, default=42)
+    ap.add_argument('--suppression', choices=['on', 'off'], default='on',
+                    help='Enable the v2 feature-gate FP suppression layer. '
+                         'When off, all alerts pass through unchanged — useful '
+                         'for A/B comparison with the suppression layer disabled.')
     args = ap.parse_args()
+    suppression_enabled = (args.suppression == 'on')
 
     os.makedirs(OUT_DIR, exist_ok=True)
     device = resolve_device(args.device)
@@ -157,13 +106,13 @@ def main():
     ds = TpDataset(df, DATA_DIR)
     dl = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-    # ── Run both models ─────────────────────────────────────────────────────
+    # ── Run baseline model ──────────────────────────────────────────────────
     probs_dict = {}
-    for name, ckpt in [('baseline', BASELINE_CKPT), ('finetuned', FINETUNED_CKPT)]:
+    for name, ckpt in [('baseline', BASELINE_CKPT)]:
         print(f"\n{'='*72}\nMODEL: {name.upper()}\n{'='*72}")
         if not os.path.exists(ckpt):
             print(f"[skip] {ckpt} not found"); continue
-        model = build_model(ckpt, device)
+        model = load_ecgfounder(device, ckpt_path=ckpt)
         probs = run_inference(model, dl, device)
         np.save(os.path.join(OUT_DIR, f"{name}_probs_tp.npy"), probs)
         probs_dict[name] = probs
@@ -172,8 +121,12 @@ def main():
         print("Need baseline model — exiting."); return
 
     # ── Suppressor (multiclass router) ──────────────────────────────────────
-    suppressor = MultiClassFPSuppressor()
-    print(f"\nSuppressor supports: {suppressor.supported_classes()}\n")
+    suppressor = MultiClassFPSuppressor(enabled=suppression_enabled)
+    # Local view of "which event types are currently being gated". Empty when
+    # suppression is off — drives the has_suppressor branches below.
+    active_events = set(suppressor.supported_classes())
+    print(f"\nSuppression: {'ON' if suppression_enabled else 'OFF'}")
+    print(f"Suppressor supports: {sorted(active_events)}\n")
 
     # Pre-compute suppressor decisions for ALL baseline alerts at the lowest
     # threshold (0.5).  Higher thresholds are subsets.
@@ -187,7 +140,7 @@ def main():
         rel = str(row['JSON File']).replace('\\','/')
         path = os.path.join(DATA_DIR, rel)
         # v2: route by event type name directly
-        if et not in SUPPRESSED_EVENTS:
+        if et not in active_events:
             continue   # no rule for this class
         cls_idx = LABEL_MAP.get(et, AFIB_IDX)
         p = float(baseline_probs[i, cls_idx])
@@ -199,33 +152,11 @@ def main():
         except Exception:
             decisions[int(i)] = None
 
-    # Also compute for finetuned if available
-    ft_decisions = {}
-    if 'finetuned' in probs_dict:
-        ft_probs = probs_dict['finetuned']
-        ft_thr = MODEL_THRESHOLDS['finetuned']
-        print("Pre-computing suppressor decisions for finetuned model alerts...")
-        for i, row in tqdm(df.iterrows(), total=len(df), desc="  suppressor-ft"):
-            et = row['Event Type']
-            rel = str(row['JSON File']).replace('\\','/')
-            path = os.path.join(DATA_DIR, rel)
-            if et not in SUPPRESSED_EVENTS:
-                continue
-            cls_idx = LABEL_MAP.get(et, AFIB_IDX)
-            p = float(ft_probs[i, cls_idx])
-            if p < ft_thr:
-                continue
-            try:
-                r = suppressor.suppress_alert(et, p, path)
-                ft_decisions[int(i)] = r
-            except Exception:
-                ft_decisions[int(i)] = None
-
     # ══════════════════════════════════════════════════════════════════════════
-    # BASELINE + FINETUNED: per-class TP retention at default thresholds
+    # BASELINE: per-class TP retention at default threshold
     # ══════════════════════════════════════════════════════════════════════════
     print("\n" + "="*108)
-    print("TP RETENTION COMPARISON  (baseline t=0.5 vs finetuned t=0.2646)")
+    print("TP RETENTION  (baseline t=0.5)")
     print("  Higher detection & retention = better  (these are confirmed TPs)")
     print("="*108)
 
@@ -237,7 +168,7 @@ def main():
         cls_idx = LABEL_MAP.get(et, AFIB_IDX)
 
         # v2: route by event type name directly
-        has_suppressor = et in SUPPRESSED_EVENTS
+        has_suppressor = et in active_events
 
         row = dict(event_type=et, n=n_total, in_label_map=in_map,
                    class_idx=cls_idx,
@@ -264,28 +195,6 @@ def main():
             row['baseline_retain_pct'] = 100 * detected_bs / max(1, n_total)
             row['baseline_supp_loss_pct'] = 0.0
 
-        # Finetuned
-        if 'finetuned' in probs_dict:
-            p_tgt_ft = ft_probs[idxs, cls_idx]
-            ft_thr = MODEL_THRESHOLDS['finetuned']
-            detected_ft = int((p_tgt_ft >= ft_thr).sum())
-            row['finetuned_detected'] = detected_ft
-            row['finetuned_detect_pct'] = 100 * detected_ft / max(1, n_total)
-            if has_suppressor:
-                retained_ft = 0
-                for pos, ei in enumerate(idxs):
-                    if p_tgt_ft[pos] < ft_thr: continue
-                    sr = ft_decisions.get(int(ei))
-                    if sr is None or sr.keep: retained_ft += 1
-                row['finetuned_retained'] = retained_ft
-                row['finetuned_retain_pct'] = 100 * retained_ft / max(1, n_total)
-                row['finetuned_supp_loss_pct'] = (100 * (detected_ft - retained_ft) /
-                                                   max(1, detected_ft)) if detected_ft > 0 else 0.0
-            else:
-                row['finetuned_retained'] = detected_ft
-                row['finetuned_retain_pct'] = 100 * detected_ft / max(1, n_total)
-                row['finetuned_supp_loss_pct'] = 0.0
-
         default_rows.append(row)
 
     default_df = pd.DataFrame(default_rows)
@@ -293,21 +202,16 @@ def main():
 
     # Console
     print(f"\n{'Event Type':<33} {'n':>5} {'route':>16}  "
-          f"{'BS det%':>7} {'BS ret%':>7} {'BS loss%':>8} | "
-          f"{'FT det%':>7} {'FT ret%':>7} {'FT loss%':>8}")
-    print("-"*120)
+          f"{'det%':>7} {'ret%':>7} {'loss%':>8}")
+    print("-"*90)
     for _, r in default_df.iterrows():
         marker = "*" if r['in_label_map'] else " "
         route = (r['suppressor_target'][:14]
                  if r['suppressor_target'] != 'none' else 'no_supp')
-        ft_det = f"{r.get('finetuned_detect_pct', 0):>7.1f}" if 'finetuned' in probs_dict else f"{'—':>7}"
-        ft_ret = f"{r.get('finetuned_retain_pct', 0):>7.1f}" if 'finetuned' in probs_dict else f"{'—':>7}"
-        ft_loss = f"{r.get('finetuned_supp_loss_pct', 0):>8.1f}" if 'finetuned' in probs_dict else f"{'—':>8}"
         print(f"{r['event_type']:<33} {r['n']:>5} {route:>16}  "
               f"{r['baseline_detect_pct']:>7.1f} {r['baseline_retain_pct']:>7.1f} "
-              f"{r['baseline_supp_loss_pct']:>8.1f} | "
-              f"{ft_det} {ft_ret} {ft_loss} {marker}")
-    print("-"*120)
+              f"{r['baseline_supp_loss_pct']:>8.1f}  {marker}")
+    print("-"*90)
 
     # ══════════════════════════════════════════════════════════════════════════
     # BASELINE THRESHOLD VARIANT COMPARISON ON TPs
@@ -326,7 +230,7 @@ def main():
         cls_idx = LABEL_MAP.get(et, AFIB_IDX)
 
         # v2: route by event type name directly
-        has_suppressor = et in SUPPRESSED_EVENTS
+        has_suppressor = et in active_events
 
         vrow = dict(event_type=et, n=n_total, in_label_map=in_map,
                     class_idx=cls_idx,
@@ -358,7 +262,8 @@ def main():
 
     var_df = pd.DataFrame(variant_rows)
     var_df = var_df.sort_values(['in_label_map', 'event_type'], ascending=[False, True])
-    var_csv = os.path.join(OUT_DIR, 'tp_baseline_threshold_variants.csv')
+    out_suffix = "" if suppression_enabled else "_supp_off"
+    var_csv = os.path.join(OUT_DIR, f'tp_baseline_threshold_variants{out_suffix}.csv')
     var_df.to_csv(var_csv, index=False)
 
     # Console table
@@ -416,24 +321,20 @@ def main():
               f"({'all' if args.per_class == 0 else 'stratified sample'})")
     md.append(f"**Model**: Baseline (`{BASELINE_CKPT}`)")
     md.append(f"**Thresholds**: {', '.join(str(t) for t in BASELINE_THRESHOLD_VARIANTS)}")
-    md.append(f"**Suppressors active**: {sorted(SUPPRESSED_EVENTS)}\n")
+    md.append(f"**Suppression**: {'ON' if suppression_enabled else 'OFF'}")
+    md.append(f"**Suppressors active**: {sorted(active_events)}\n")
     md.append("All events are clinician-confirmed true positives → "
               "**higher detection & retention is better**.\n")
     md.append("---\n")
 
-    # Baseline vs finetuned default table
-    if 'finetuned' in probs_dict:
-        md.append("## 1. Baseline vs Fine-tuned at default thresholds\n")
-        md.append("| Event Type | n | Baseline detect% | Baseline retain% | "
-                  "Fine-tuned detect% | Fine-tuned retain% |")
-        md.append("|---|---|---|---|---|---|")
-        for _, r in default_df.iterrows():
-            ft_det = f"{r.get('finetuned_detect_pct', 0):.1f}" if 'finetuned' in probs_dict else "—"
-            ft_ret = f"{r.get('finetuned_retain_pct', 0):.1f}" if 'finetuned' in probs_dict else "—"
-            md.append(f"| {r['event_type']} | {r['n']} | "
-                      f"{r['baseline_detect_pct']:.1f} | {r['baseline_retain_pct']:.1f} | "
-                      f"{ft_det} | {ft_ret} |")
-        md.append("\n---\n")
+    # Baseline default-threshold table
+    md.append("## 1. Baseline at default threshold\n")
+    md.append("| Event Type | n | Baseline detect% | Baseline retain% |")
+    md.append("|---|---|---|---|")
+    for _, r in default_df.iterrows():
+        md.append(f"| {r['event_type']} | {r['n']} | "
+                  f"{r['baseline_detect_pct']:.1f} | {r['baseline_retain_pct']:.1f} |")
+    md.append("\n---\n")
 
     # Threshold variant table
     md.append("## 2. Baseline threshold variant comparison\n")
@@ -503,12 +404,12 @@ def main():
     md.append(f"\nFull CSV: `{var_csv}`")
     md.append(f"\n*Generated from `ecg_tp_fzark` using the baseline model.*")
 
-    md_path = os.path.join(OUT_DIR, 'tp_fzark_threshold_variants_report.md')
+    md_path = os.path.join(OUT_DIR, f'tp_fzark_threshold_variants_report{out_suffix}.md')
     with open(md_path, 'w') as f:
         f.write('\n'.join(md))
 
-    # Also save the default comparison
-    default_csv = os.path.join(OUT_DIR, 'tp_baseline_vs_finetuned.csv')
+    # Also save the default-threshold per-class summary
+    default_csv = os.path.join(OUT_DIR, f'tp_baseline_default_threshold{out_suffix}.csv')
     default_df.to_csv(default_csv, index=False)
 
     print(f"\nReport  → {md_path}")

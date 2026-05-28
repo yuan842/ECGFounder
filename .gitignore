@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model weights (downloaded on first use via checkpoints.ensure_checkpoint)
+checkpoint/*.pth
+checkpoint/*.npz
+
+# External datasets (huge; not redistributable)
+data/
+
+# Large evaluation artifacts that can be regenerated
+res/mitdb_standardized/
+res/**/*.npy

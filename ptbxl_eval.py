@@ -4,120 +4,65 @@ from collections import Counter
 from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 import os
-from shutil import copyfile
-import pickle
-import time
-import wfdb
-import ast
-from scipy import signal
 import json
-from net1d import Net1D
+from device_utils import resolve_device
 from util import eval_with_dynamic_thresh
-from sklearn.metrics import roc_auc_score, average_precision_score, confusion_matrix, f1_score
-from scipy.stats import bootstrap
+from preprocessing import ECGPreprocessor
+from checkpoints import load_ecgfounder
+from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from tqdm import tqdm
 import torch
 import torch.nn.functional as F
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-import torchvision.transforms as transforms
-from scipy.interpolate import interp1d
+from torch.utils.data import DataLoader
 
-class PTBXL_Dataset(torch.utils.data.Dataset):
+class PTBXL_SingleLead_Dataset(torch.utils.data.Dataset):
+    """PTB-XL evaluation dataset.
+
+    Uses the unified `ECGPreprocessor.for_ptbxl()` pipeline (50 Hz notch +
+    0.67–40 Hz bandpass + median baseline + winsorized z-score).
+
+    NOTE: This applies full filtering (previously PTB-XL eval skipped it),
+    bringing PTB-XL inputs onto the same preprocessing manifold as fzark
+    and MIT-BIH. Metrics will shift relative to the historical baseline.
+    """
+
     def __init__(self, ecg_path, csv_path):
-
         self.data = pd.read_csv(csv_path)
         self.data = self.data.dropna(subset=['filename_hr', 'label'])
-        self.fs = 5000
         self.ecg_path = ecg_path
+        self.prep = ECGPreprocessor.for_ptbxl()
 
-
-    def z_score_normalization(self,signal):
-        return (signal - np.mean(signal)) / (np.std(signal) + 1e-8) 
-        
-    def resample_unequal(self, ts, fs_in, fs_out):
-        if fs_in == 0 or len(ts) == 0:
-            return ts
-        t = ts.shape[1] / fs_in
-        fs_in, fs_out = int(fs_in), int(fs_out)
-    
-        if fs_out == fs_in:
-            return ts
-        if 2 * fs_out == fs_in:
-            return ts[:, ::2]
-    
-        resampled_ts = np.zeros((ts.shape[0], fs_out))
-        x_old = np.linspace(0, t, num=ts.shape[1], endpoint=True) 
-        x_new = np.linspace(0, t, num=int(fs_out), endpoint=True) 
-
-        for i in range(ts.shape[0]):
-            y_old = ts[i, :]
-            f = interp1d(x_old, y_old, kind='linear')
-            resampled_ts[i, :] = f(x_new)
-    
-        return resampled_ts
-            
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         hash_file_name = row['filename_hr']
-        label = row['label']
-        label = json.loads(label)
+        label = json.loads(row['label'])
         label = torch.tensor(label, dtype=torch.float)
-        
-        sample_rate = 500
-        data = [wfdb.rdsamp(self.ecg_path+hash_file_name)]
-        data = np.array([signal for signal, meta in data])
-        data = data.squeeze(0) 
-        data = np.transpose(data,  (1, 0))
-        data = self.z_score_normalization(data)
-        signal = self.resample_unequal(data, sample_rate, self.fs)
-        signal = torch.FloatTensor(signal)
-        return signal, label
+
+        record_path = os.path.join(self.ecg_path, hash_file_name)
+        tensor = self.prep.from_wfdb(record_path)
+        return tensor, label
     
-saved_dir = './res/eval'
-csv_filepath = './csv/ptbxl_label.csv'
-ecg_filepath = 'your_path/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3/'
+saved_dir = './res/eval_lead_ii'
+os.makedirs(saved_dir, exist_ok=True)
+csv_filepath = './csv/ptbxl_val.csv'
+ecg_filepath = './data/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3/'
 tasks = []
 batch_size = 512
 with open(os.path.join('./tasks.txt'), 'r') as fin:
     for line in fin:
         tasks.append(line.strip())
 
-testset = PTBXL_Dataset(ecg_path=ecg_filepath, csv_path=csv_filepath)
-testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=os.cpu_count())
-device = torch.device('cuda:{}'.format(0) if torch.cuda.is_available() else 'cpu')
+testset = PTBXL_SingleLead_Dataset(ecg_path=ecg_filepath, csv_path=csv_filepath)
+testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
+device = resolve_device()        # project default: MPS → CUDA → CPU
 
-### make model
-model = Net1D(
-    in_channels=12, 
-    base_filters=64, #64
-    ratio=1, 
-    filter_list=[64, 160, 160, 400, 400, 1024, 1024], #[64, 160, 160, 400, 400, 1024, 1024]
-    m_blocks_list=[2,2,2,3,3,4,4], 
-    kernel_size=16, 
-    stride=2, 
-    groups_width=16,
-    verbose=False, 
-    use_bn=False,
-    use_do=False,
-    n_classes=150)
-
-model.to(device)
-
-checkpoint = torch.load('./checkpoint/12_lead_ECGFounder.pth', map_location=device)
-state_dict = checkpoint['state_dict']
-
-log = model.load_state_dict(state_dict, strict=False)
-
-for name, param in model.named_parameters():
+# Load model (auto-downloads checkpoint if missing).
+model = load_ecgfounder(device)
+for param in model.parameters():
     param.requires_grad = False
-
-model.to(device)
-
-model.eval()
 prog_iter_test = tqdm(testloader, desc="Testing", leave=False)
 all_gt = []
 all_pred_prob = []
@@ -206,7 +151,6 @@ def bootstrap_ci(metric_func, true, pred, threshold, n_resamples=10):
     
     return (round(lower_bound, 3), round(upper_bound, 3))
 
-# calculate metrics and their 95% CI
 results = []
 for i, task in enumerate(tasks):
     true = all_gt_df.loc[i]
@@ -214,7 +158,6 @@ for i, task in enumerate(tasks):
     threshold = all_thre_df.loc[i]
     sens, spec, prec, f1, ppv, npv, auroc, auprc = calculate_performance_metrics(true, pred, threshold)
     
-    # calculate 95% CI
     sens_ci = bootstrap_ci(lambda true, pred, threshold: calculate_performance_metrics(true, pred, threshold)[0], true, pred, threshold)
     spec_ci = bootstrap_ci(lambda true, pred, threshold: calculate_performance_metrics(true, pred, threshold)[1], true, pred, threshold)
     f1_ci = bootstrap_ci(lambda true, pred, threshold: calculate_performance_metrics(true, pred, threshold)[3], true, pred, threshold)
@@ -236,17 +179,4 @@ for i, task in enumerate(tasks):
 
 results_df = pd.DataFrame(results)
 results_df.to_csv((os.path.join(saved_dir, 'res.csv')), index=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print(f"Validation evaluation finished successfully! Performance metrics are saved at {os.path.join(saved_dir, 'res.csv')}")

@@ -36,9 +36,22 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-# ─── Re-export SuppressionResult for backward compatibility ───────────────
-# v1 consumers do:  from multiclass_fp_suppression import SuppressionResult
-from afib_fp_suppression import SuppressionResult  # noqa: F401
+
+# ─── SuppressionResult dataclass (inlined; was previously in v1 module) ───
+@dataclass
+class SuppressionResult:
+    """Result of a single suppression decision.
+
+    Backward-compatible with the v1 dataclass. v2 has no layer distinction,
+    so `layer1_pass == keep` and `layer2_pass` is always True / `layer2_score` 0.
+    """
+    final_prob: float
+    keep: bool
+    layer1_pass: bool
+    layer2_pass: bool
+    layer2_score: float
+    reason: str
+    features: Optional[Dict[str, Any]] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -304,16 +317,27 @@ class MultiClassFPSuppressor:
     v2 FP suppressor using simple feature gates.
 
     Drop-in replacement for the v1 MultiClassFPSuppressor.
-    Constructor arguments from v1 are accepted but ignored (no LR ranker).
+    Most constructor arguments from v1 are accepted but ignored (no LR ranker).
+
+    Parameters
+    ----------
+    enabled : bool, default True
+        If False, all alerts pass through unchanged (no feature gates evaluated,
+        no JSON I/O for feature extraction). Use for A/B comparison with the
+        suppression layer disabled.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, enabled: bool = True, **kwargs):
+        self.enabled = bool(enabled)
         # Accept and ignore v1 constructor args for backward compatibility
-        pass
 
     def supported_classes(self) -> list:
-        """Return the list of event types with an active suppression rule."""
-        return list(ACTIVE_RULES.keys())
+        """Return the list of event types with an active suppression rule.
+
+        Returns an empty list when the suppressor is disabled — callers can
+        gate "is anything actively suppressed?" branches on this.
+        """
+        return list(ACTIVE_RULES.keys()) if self.enabled else []
 
     def suppress_alert(
         self,
@@ -335,6 +359,15 @@ class MultiClassFPSuppressor:
         -------
         SuppressionResult  (same dataclass as v1 — backward compatible)
         """
+        # Hard pass-through when the suppressor is disabled at the instance
+        # level — skips feature extraction entirely (no JSON I/O).
+        if not self.enabled:
+            return SuppressionResult(
+                final_prob=float(p), keep=True,
+                layer1_pass=True, layer2_pass=True, layer2_score=0.0,
+                reason='disabled', features=None,
+            )
+
         # Resolve class name
         if isinstance(alert_class, int):
             cls = INDEX_TO_CLASS.get(alert_class)
