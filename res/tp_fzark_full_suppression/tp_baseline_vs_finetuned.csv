@@ -1,0 +1,18 @@
+event_type,n,in_label_map,class_idx,suppressor_target,baseline_detected,baseline_detect_pct,baseline_retained,baseline_retain_pct,baseline_supp_loss_pct,finetuned_detected,finetuned_detect_pct,finetuned_retained,finetuned_retain_pct,finetuned_supp_loss_pct
+Atrial Fibrillation,200,True,5,Atrial Fibrillation,193,96.5,193,96.5,0.0,194,97.0,194,97.0,0.0
+Isolated Supraventricular Beat,200,True,16,none,124,62.0,124,62.0,0.0,151,75.5,151,75.5,0.0
+Isolated Ventricular Beat,200,True,9,none,164,82.0,164,82.0,0.0,184,92.0,184,92.0,0.0
+Pause,82,True,143,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Prolonged RR Interval,169,True,81,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Supraventricular Couplet,200,True,20,none,1,0.5,1,0.5,0.0,4,2.0,4,2.0,0.0
+Ventricular Couplet,36,True,91,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Ventricular Run,200,True,99,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Bradycardia,200,False,5,Bradycardia,23,11.5,19,9.5,17.391304347826086,6,3.0,2,1.0,66.66666666666667
+Multiple Event,116,False,5,none,73,62.93103448275862,73,62.93103448275862,0.0,56,48.275862068965516,56,48.275862068965516,0.0
+ST Elevation,1,False,5,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Supraventricular Bigeminy,64,False,5,none,59,92.1875,59,92.1875,0.0,48,75.0,48,75.0,0.0
+Supraventricular Run,26,False,5,none,19,73.07692307692308,19,73.07692307692308,0.0,15,57.69230769230769,15,57.69230769230769,0.0
+Supraventricular Trigeminy,76,False,5,Supraventricular Trigeminy,17,22.36842105263158,17,22.36842105263158,0.0,3,3.9473684210526314,3,3.9473684210526314,0.0
+Unknown,200,False,5,none,187,93.5,187,93.5,0.0,140,70.0,140,70.0,0.0
+Ventricular Bigeminy,2,False,5,none,1,50.0,1,50.0,0.0,1,50.0,1,50.0,0.0
+Ventricular Trigeminy,16,False,5,Ventricular Trigeminy,4,25.0,2,12.5,50.0,1,6.25,0,0.0,100.0
