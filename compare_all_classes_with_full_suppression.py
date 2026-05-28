@@ -15,43 +15,29 @@ Compares baseline vs fine-tuned models head-to-head on every event type
 present in the dataset.
 """
 from __future__ import annotations
-import os, json, argparse
+import os, argparse
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from scipy.signal import medfilt, iirnotch, filtfilt, butter
-from scipy.interpolate import interp1d
 
-from net1d import Net1D
 from multiclass_fp_suppression import MultiClassFPSuppressor, ACTIVE_RULES
 from device_utils import resolve_device
+from preprocessing import ECGPreprocessor, TARGET_LEN
+from checkpoints import load_ecgfounder
+from label_config import FZARK_LABEL_MAP as LABEL_MAP
 
 # ─── Config ─────────────────────────────────────────────────────────────────
 DATA_DIR        = "./data/ecg_fp_doctor removed1"
 SUMMARY_CSV     = "./data/ecg_fp_doctor removed1/summary.csv"
 BASELINE_CKPT   = "./checkpoint/1_lead_ECGFounder.pth"
-FINETUNED_CKPT  = "./checkpoint/finetuned_afib_model.pth"
 OUT_DIR         = "./res/fp_allclass_full_suppression"
 
-# ECGFounder 150-class index used for each native event-type
-LABEL_MAP = {
-    "Atrial Fibrillation":            5,
-    "Isolated Ventricular Beat":      9,
-    "Prolonged RR Interval":         81,
-    "Ventricular Couplet":           91,
-    "Ventricular Run":               99,
-    "Pause":                        143,
-    "Sinus Tachycardia":              6,
-    "Supraventricular Couplet":      20,
-    "Isolated Supraventricular Beat":16,
-}
 AFIB_IDX = 5
 
 MODEL_THRESHOLDS = {
     "baseline":   0.5,
-    "finetuned":  0.2646,
 }
 
 # Baseline threshold variants for sensitivity analysis
@@ -60,66 +46,24 @@ BASELINE_THRESHOLD_VARIANTS = [0.5, 0.6, 0.7]
 # Per-class suppression — which event types have an active v2 filter rule
 SUPPRESSED_EVENTS = set(ACTIVE_RULES.keys())  # AFib, Bradycardia, SV Trigeminy, V Trigeminy
 
-# Pre-processing constants (match eval_ecg_tprex.py)
-FS_IN, FS_OUT  = 128, 500
-TARGET_LEN     = 5000
-MAGNIFICATION  = 1000
-POWERLINE_HZ   = 50
-WIN_LIMITS     = (1.5, 98.5)
 BATCH_SIZE     = 64
-
-
-def load_json_ecg(json_path: str) -> np.ndarray:
-    with open(json_path) as f:
-        records = json.load(f)
-    raw = np.concatenate([np.array(r['data']['ecg'], dtype=np.float32)
-                          for r in records])
-    return raw / MAGNIFICATION
-
-def robust_preprocess(signal_1d: np.ndarray, fs_in: int = FS_IN) -> torch.Tensor:
-    x = signal_1d[np.newaxis, :]
-    b, a = iirnotch(POWERLINE_HZ, 30, fs_in); x = filtfilt(b, a, x, axis=1)
-    b, a = butter(4, [0.67, 40.0], btype='bandpass', fs=fs_in); x = filtfilt(b, a, x, axis=1)
-    kernel = int(0.4 * fs_in) | 1
-    baseline = medfilt(x[0], kernel_size=kernel); x[0] = x[0] - baseline
-    t = x.shape[1] / fs_in
-    x_old = np.linspace(0, t, num=x.shape[1], endpoint=True)
-    x_new = np.linspace(0, t, num=int(t * FS_OUT), endpoint=True)
-    f = interp1d(x_old, x[0], kind='linear', bounds_error=False, fill_value=0.0)
-    sig = f(x_new)
-    if len(sig) >= TARGET_LEN:
-        s = (len(sig) - TARGET_LEN) // 2; sig = sig[s:s + TARGET_LEN]
-    else:
-        pad = TARGET_LEN - len(sig); sig = np.pad(sig, (pad // 2, pad - pad // 2))
-    lo, hi = np.percentile(sig, WIN_LIMITS); sig = np.clip(sig, lo, hi)
-    sig = (sig - sig.mean()) / (sig.std() + 1e-8)
-    return torch.from_numpy(sig.astype(np.float32))[None, :]
 
 
 class FpDataset(Dataset):
     def __init__(self, df, data_dir):
-        self.df = df.reset_index(drop=True); self.data_dir = data_dir
+        self.df = df.reset_index(drop=True)
+        self.data_dir = data_dir
+        self.prep = ECGPreprocessor.for_fzark()
     def __len__(self): return len(self.df)
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
         rel = str(row['JSON File']).replace('\\', '/')
         path = os.path.join(self.data_dir, rel)
         try:
-            sig = load_json_ecg(path); tensor = robust_preprocess(sig)
+            tensor = self.prep.from_fzark_json(path)
         except Exception:
             tensor = torch.zeros(1, TARGET_LEN)
         return tensor, idx
-
-
-def build_model(ckpt_path, device):
-    m = Net1D(in_channels=1, base_filters=64, ratio=1,
-              filter_list=[64, 160, 160, 400, 400, 1024, 1024],
-              m_blocks_list=[2,2,2,3,3,4,4], kernel_size=16, stride=2,
-              groups_width=16, verbose=False, use_bn=False, use_do=False, n_classes=150)
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    sd = ckpt['state_dict'] if isinstance(ckpt, dict) and 'state_dict' in ckpt else ckpt
-    m.load_state_dict(sd)
-    return m.to(device).eval()
 
 
 @torch.no_grad()
@@ -137,7 +81,13 @@ def main():
     ap.add_argument('--per-class', type=int, default=200)
     ap.add_argument('--device', default=None)
     ap.add_argument('--seed', type=int, default=42)
+    ap.add_argument('--suppression', choices=['on', 'off'], default='on',
+                    help='Enable the v2 feature-gate FP suppression layer. '
+                         'When off, all alerts pass through unchanged — useful '
+                         'for A/B comparison with the suppression layer disabled.')
     args = ap.parse_args()
+    suppression_enabled = (args.suppression == 'on')
+    out_suffix = "" if suppression_enabled else "_supp_off"
 
     os.makedirs(OUT_DIR, exist_ok=True)
     device = resolve_device(args.device)
@@ -154,22 +104,24 @@ def main():
     ds = FpDataset(df, DATA_DIR)
     dl = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-    # ── Run both models ─────────────────────────────────────────────────────
+    # ── Run baseline model ──────────────────────────────────────────────────
     probs_dict = {}
-    for name, ckpt in [('baseline', BASELINE_CKPT), ('finetuned', FINETUNED_CKPT)]:
+    for name, ckpt in [('baseline', BASELINE_CKPT)]:
         print(f"\n{'='*72}\nMODEL: {name.upper()}\n{'='*72}")
         if not os.path.exists(ckpt):
             print(f"[skip] {ckpt} not found"); continue
-        model = build_model(ckpt, device)
+        model = load_ecgfounder(device, ckpt_path=ckpt)
         probs = run_inference(model, dl, device)
         np.save(os.path.join(OUT_DIR, f"{name}_probs_full.npy"), probs)
         probs_dict[name] = probs
-    if len(probs_dict) < 2:
-        print("Need both models — exiting."); return
+    if 'baseline' not in probs_dict:
+        print("Need baseline model — exiting."); return
 
     # ── Suppressor (multiclass router) ──────────────────────────────────────
-    suppressor = MultiClassFPSuppressor()
-    print(f"\nSuppressor supports: {suppressor.supported_classes()}\n")
+    suppressor = MultiClassFPSuppressor(enabled=suppression_enabled)
+    active_events = set(suppressor.supported_classes())
+    print(f"\nSuppression: {'ON' if suppression_enabled else 'OFF'}")
+    print(f"Suppressor supports: {sorted(active_events)}\n")
 
     # Pre-compute suppressor decisions for every event whose event type
     # has an active v2 filter rule.
@@ -182,7 +134,7 @@ def main():
         rel = str(row['JSON File']).replace('\\','/')
         path = os.path.join(DATA_DIR, rel)
         # v2: route by event type name directly
-        if et not in SUPPRESSED_EVENTS:
+        if et not in active_events:
             continue   # no rule for this class; alert passes through
         for name, probs in probs_dict.items():
             cls_idx = LABEL_MAP.get(et, AFIB_IDX)
@@ -206,7 +158,7 @@ def main():
         head_name = et if in_map else f"{et} → AFib head"
 
         # v2: route by event type name directly
-        has_suppressor = et in SUPPRESSED_EVENTS
+        has_suppressor = et in active_events
 
         row = dict(event_type=et, n=n_total, in_label_map=in_map,
                    class_idx=cls_idx, eval_head=head_name,
@@ -238,7 +190,7 @@ def main():
     res_df = pd.DataFrame(rows)
     res_df = res_df.sort_values(['in_label_map','event_type'],
                                 ascending=[False, True])
-    csv_out = os.path.join(OUT_DIR, 'allclass_full_suppression.csv')
+    csv_out = os.path.join(OUT_DIR, f'allclass_full_suppression{out_suffix}.csv')
     res_df.to_csv(csv_out, index=False)
 
     # ── Console summary ─────────────────────────────────────────────────────
@@ -247,28 +199,17 @@ def main():
           "(lower alert rate = better, all events are FPs)")
     print("="*108)
     print(f"\n{'Event Type':<33} {'n':>4} {'route':>16}  "
-          f"{'BS raw%':>7} {'BS post%':>8} | "
-          f"{'FT raw%':>7} {'FT post%':>8}  "
-          f"{'Δ post':>7}")
-    print("-"*108)
+          f"{'raw%':>7} {'post%':>8}")
+    print("-"*80)
     for _, r in res_df.iterrows():
         bs_post = (f"{r['baseline_post_rate_pct']:>8.1f}"
                    if r['baseline_post_rate_pct'] is not None else f"{'—':>8}")
-        ft_post = (f"{r['finetuned_post_rate_pct']:>8.1f}"
-                   if r['finetuned_post_rate_pct'] is not None else f"{'—':>8}")
-        if (r['baseline_post_rate_pct'] is not None and
-                r['finetuned_post_rate_pct'] is not None):
-            d_post = (f"{r['baseline_post_rate_pct'] - r['finetuned_post_rate_pct']:+7.1f}")
-        else:
-            d_post = f"{'—':>7}"
         marker = "*" if r['in_label_map'] else " "
         route = (r['suppressor_target'][:14]
                  if r['suppressor_target'] != 'none' else 'no_supp')
         print(f"{r['event_type']:<33} {r['n']:>4} {route:>16}  "
-              f"{r['baseline_raw_rate_pct']:>6.1f} {bs_post}  | "
-              f"{r['finetuned_raw_rate_pct']:>6.1f} {ft_post}  "
-              f"{d_post}{marker}")
-    print("-"*108)
+              f"{r['baseline_raw_rate_pct']:>6.1f} {bs_post}  {marker}")
+    print("-"*80)
     print("* = native-class head | unmarked = AFib-head cross-class evaluation")
 
     # Aggregate (weighted by n)
@@ -289,21 +230,21 @@ def main():
     md.append("# All-Class FP Comparison with Full Per-Class Suppression\n")
     md.append(f"**Cohort**: {len(df)} records, up to {args.per_class}/event-type")
     md.append(f"**Device**: {device}")
-    md.append(f"**Suppressors active**: {sorted(SUPPRESSED_EVENTS)}\n")
+    md.append(f"**Suppression**: {'ON' if suppression_enabled else 'OFF'}")
+    md.append(f"**Suppressors active**: {sorted(active_events)}\n")
     md.append("## Per-class results\n")
-    md.append("| Event Type | n | route | Baseline raw% | Baseline post% | Fine-tuned raw% | Fine-tuned post% |")
-    md.append("|---|---|---|---|---|---|---|")
+    md.append("| Event Type | n | route | Baseline raw% | Baseline post% |")
+    md.append("|---|---|---|---|---|")
     for _, r in res_df.iterrows():
         bs_post = f"{r['baseline_post_rate_pct']:.1f}" if r['baseline_post_rate_pct'] is not None else "—"
-        ft_post = f"{r['finetuned_post_rate_pct']:.1f}" if r['finetuned_post_rate_pct'] is not None else "—"
         route = r['suppressor_target'] if r['suppressor_target'] != 'none' else '—'
         md.append(f"| {r['event_type']} | {r['n']} | {route} | "
-                  f"{r['baseline_raw_rate_pct']:.1f} | {bs_post} | "
-                  f"{r['finetuned_raw_rate_pct']:.1f} | {ft_post} |")
+                  f"{r['baseline_raw_rate_pct']:.1f} | {bs_post} |")
     md.append(f"\nFull CSV: `{csv_out}`")
-    with open(os.path.join(OUT_DIR, 'allclass_full_suppression_report.md'), 'w') as f:
+    report_path = os.path.join(OUT_DIR, f'allclass_full_suppression_report{out_suffix}.md')
+    with open(report_path, 'w') as f:
         f.write('\n'.join(md))
-    print(f"\nReport → {OUT_DIR}/allclass_full_suppression_report.md")
+    print(f"\nReport → {report_path}")
 
     # ══════════════════════════════════════════════════════════════════════════
     # BASELINE THRESHOLD VARIANT COMPARISON
@@ -334,7 +275,7 @@ def main():
         cls_idx = LABEL_MAP.get(et, AFIB_IDX)
 
         # v2: route by event type name directly
-        has_suppressor = et in SUPPRESSED_EVENTS
+        has_suppressor = et in active_events
 
         vrow = dict(event_type=et, n=n_total, in_label_map=in_map,
                     class_idx=cls_idx,
@@ -369,7 +310,7 @@ def main():
 
     var_df = pd.DataFrame(variant_rows)
     var_df = var_df.sort_values(['in_label_map', 'event_type'], ascending=[False, True])
-    var_csv = os.path.join(OUT_DIR, 'baseline_threshold_variants.csv')
+    var_csv = os.path.join(OUT_DIR, f'baseline_threshold_variants{out_suffix}.csv')
     var_df.to_csv(var_csv, index=False)
 
     # Console table
@@ -486,7 +427,7 @@ def main():
     vmd.append(f"\n\nFull CSV: `{var_csv}`")
     vmd.append(f"\n*Generated from the same inference run as the main comparison.*")
 
-    var_md_path = os.path.join(OUT_DIR, 'baseline_threshold_variants_report.md')
+    var_md_path = os.path.join(OUT_DIR, f'baseline_threshold_variants_report{out_suffix}.md')
     with open(var_md_path, 'w') as f:
         f.write('\n'.join(vmd))
     print(f"\nVariant report → {var_md_path}")
