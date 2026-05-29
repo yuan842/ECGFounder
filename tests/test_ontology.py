@@ -13,6 +13,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from label_config import (
     ClinicalOntologyNode,
     ClinicalRiskTier,
+    DETECTION_SCOPE,
+    HEAD_THRESHOLDS,
+    head_threshold,
     FZARK_LABEL_MAP,
     FZARK_ONTOLOGY,
     FZARK_UNMAPPABLE,
@@ -22,10 +25,68 @@ from label_config import (
     PTBXL_ACTIVE_CLASSES,
     TASKS_SHA256,
     detect,
+    detect_index,
     get_index,
+    in_scope,
     is_supported,
     load_tasks,
+    scope_indices,
 )
+
+
+# ─── detection scope ────────────────────────────────────────────────────────
+
+class TestDetectionScope:
+    def test_scope_indices(self):
+        assert scope_indices() == frozenset({4, 5, 6, 93, 98, 142})
+
+    def test_scope_names_match_tasks_txt(self):
+        tasks = load_tasks()
+        for idx, name in DETECTION_SCOPE.items():
+            assert tasks[idx] == name, (idx, name, tasks[idx])
+
+    def test_scope_indices_match_ontology(self):
+        # the run/pause heads in scope must agree with FZARK_LABEL_MAP
+        assert FZARK_LABEL_MAP["Supraventricular Run"] == 93
+        assert FZARK_LABEL_MAP["Ventricular Run"] == 98
+        assert FZARK_LABEL_MAP["Pause"] == 142
+
+    def test_in_scope_heads_detect(self):
+        probs = [1.0] * 150
+        assert detect(probs, "Atrial Fibrillation") is True     # head 5
+        assert detect(probs, "Bradycardia") is True             # head 4
+        assert detect(probs, "Sinus Tachycardia") is True       # head 6
+        assert detect(probs, "Supraventricular Run") is True    # head 93
+        assert detect(probs, "Ventricular Run") is True         # head 98
+        assert detect(probs, "Pause") is True                   # head 142
+
+    def test_out_of_scope_heads_return_none(self):
+        probs = [1.0] * 150
+        # mapped events whose heads are NOT in scope → None (not a false negative)
+        assert detect(probs, "Isolated Ventricular Beat") is None     # head 9
+        assert detect(probs, "Isolated Supraventricular Beat") is None  # head 16
+        assert detect_index(probs, 9) is None
+        assert detect_index(probs, 98) is True
+        assert in_scope(142) and not in_scope(9)
+
+    def test_per_head_threshold_values(self):
+        assert head_threshold(142) == 0.006   # Pause (calibrated)
+        assert head_threshold(93) == 0.040    # SV Run (calibrated)
+        assert head_threshold(98) == 0.5      # VT — NOT overridden (worse-than-chance)
+        assert head_threshold(5) == 0.5       # AFib — default
+
+    def test_calibrated_threshold_applied_by_default(self):
+        # Pause head 142 fires at a low score (0.01 > 0.006) under its calibrated thr,
+        probs = [0.0] * 150
+        probs[142] = 0.01
+        assert detect(probs, "Pause") is True
+        assert detect_index(probs, 142) is True
+        # ...but the same 0.01 at an un-overridden head (AFib) stays below 0.5.
+        probs2 = [0.0] * 150
+        probs2[5] = 0.01
+        assert detect(probs2, "Atrial Fibrillation") is False
+        # explicit threshold override still wins
+        assert detect(probs, "Pause", threshold=0.5) is False
 
 
 # ─── tasks.txt integrity ────────────────────────────────────────────────────

@@ -340,8 +340,73 @@ PTBXL_ACTIVE_CLASSES: frozenset[int] = frozenset({
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Detection scope — active ECGFounder-head allowlist
+# ═══════════════════════════════════════════════════════════════════════════
+# Only these ECGFounder head indices are "in scope" for detection / reporting.
+# Set by user request (2026-05-29): three rate/rhythm heads (4/5/6) plus the
+# three run/pause heads (93/98/142). Names are the tasks.txt (0-based) labels at
+# each index; validated against load_tasks() in tests/test_ontology.py (tasks.txt
+# isn't read at import time because its path is repo-root-relative and
+# load_tasks() does a hash check).
+#
+# NOTE: heads 93/98/142 carry the head's own tasks.txt label (SVT / VT / sinus
+# pause), which is a "good" — not exact — semantic match to the fzark events
+# Supraventricular Run / Ventricular Run / Pause (see FZARK_ONTOLOGY).
+#
+# Heads NOT in scope (e.g. PVC 9, PAC 16, SV Couplet 19) still have ontology
+# entries for label-mapping, but detect() returns None for them — i.e. "out of
+# scope", not a false negative.
+DETECTION_SCOPE: dict[int, str] = {
+    4:   "SINUS BRADYCARDIA",
+    5:   "ATRIAL FIBRILLATION",
+    6:   "SINUS TACHYCARDIA",
+    93:  "SUPRAVENTRICULAR TACHYCARDIA",   # fzark: Supraventricular Run
+    98:  "VENTRICULAR TACHYCARDIA",        # fzark: Ventricular Run
+    142: "WITH SINUS PAUSE",               # fzark: Pause
+}
+
+
+# Per-head detection thresholds — override the 0.5 default for specific heads.
+# Heads absent here use DEFAULT_THRESHOLD (0.5).
+#
+# Calibrated on cached base probs (fzark TP positives vs fp_doctor matched
+# negatives), Youden-J optimum. See scripts/calibrate_scope_thresholds.py and
+# res/scope_threshold_cal/. The run/pause heads score in the noise floor, so 0.5
+# never fires (0% sensitivity); these lowered thresholds recover recall:
+#
+#   142 Pause   : AUROC 0.76 → thr 0.006 gives sens 0.71 / spec 0.69 (defensible)
+#    93 SV Run  : AUROC 0.61 → thr 0.040 gives sens 0.85 but PPV 0.07 (marginal,
+#                 low-confidence; included so the head can fire at all)
+#
+# Head 98 (Ventricular Run / VT) is deliberately NOT overridden: its base head is
+# WORSE THAN CHANCE on fzark (AUROC 0.36 — negatives outscore positives), so no
+# threshold yields a valid detector. Use the fine-tuned/fuzzy head for VT instead;
+# at 0.5 it stays effectively silent rather than flooding false positives.
+DEFAULT_THRESHOLD: float = 0.5
+HEAD_THRESHOLDS: dict[int, float] = {
+    142: 0.006,
+    93:  0.040,
+}
+
+
+def head_threshold(index: int) -> float:
+    """The detection threshold for `index` (per-head override or 0.5 default)."""
+    return HEAD_THRESHOLDS.get(index, DEFAULT_THRESHOLD)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Detection helpers
 # ═══════════════════════════════════════════════════════════════════════════
+
+def in_scope(index: int) -> bool:
+    """True iff `index` is an active detection head (in DETECTION_SCOPE)."""
+    return index in DETECTION_SCOPE
+
+
+def scope_indices() -> frozenset[int]:
+    """The set of in-scope ECGFounder head indices."""
+    return frozenset(DETECTION_SCOPE)
+
 
 def get_index(event_name: str) -> Optional[int]:
     """Return the ECGFounder index for `event_name`, or None if unsupported."""
@@ -357,14 +422,35 @@ def is_supported(event_name: str) -> bool:
 def detect(
     probs,
     event_name: str,
-    threshold: float = 0.5,
+    threshold: Optional[float] = None,
 ) -> Optional[bool]:
-    """Single-head detection: True if probs[idx] > threshold, None if unsupported.
+    """Single-head detection: True if probs[idx] > threshold.
 
-    Callers should treat `None` as "no detection result available" and avoid
-    logging the event as a false negative.
+    `threshold=None` (default) uses the per-head calibrated threshold
+    (head_threshold); pass a float to override. Returns None ("no detection
+    result available") if the event is unsupported OR its head is outside
+    DETECTION_SCOPE — callers should treat None as out-of-scope, not a false
+    negative.
     """
     node = FZARK_ONTOLOGY.get(event_name)
-    if node is None:
+    if node is None or node.ecgfounder_index not in DETECTION_SCOPE:
         return None
-    return bool(probs[node.ecgfounder_index] > threshold)
+    idx = node.ecgfounder_index
+    thr = head_threshold(idx) if threshold is None else threshold
+    return bool(probs[idx] > thr)
+
+
+def detect_index(
+    probs,
+    index: int,
+    threshold: Optional[float] = None,
+) -> Optional[bool]:
+    """Index-based detection: True if probs[index] > threshold.
+
+    `threshold=None` (default) uses the per-head calibrated threshold.
+    Returns None if `index` is outside DETECTION_SCOPE.
+    """
+    if index not in DETECTION_SCOPE:
+        return None
+    thr = head_threshold(index) if threshold is None else threshold
+    return bool(probs[index] > thr)
