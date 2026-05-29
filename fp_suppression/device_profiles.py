@@ -92,7 +92,29 @@ MOVE_CHEST_GEL.notes = (
 )
 
 
-_REGISTRY: Dict[str, DeviceProfile] = {p.device_id: p for p in (FZARK, MOVE_CHEST_GEL)}
+# ════════════════════════════════════════════════════════════════════════════
+# fzark_sqi — PROTOTYPE: fzark + calibrated SQI quality gates (Bradycardia, Pause)
+# ════════════════════════════════════════════════════════════════════════════
+# From the TP/FP SQI characterization (res/sqi_motion_tp_fp/), Bradycardia and
+# Pause false positives separate on SIGNAL QUALITY, not motion. Thresholds fit by
+# scripts/calibrate_sqi_gate.py (Youden-J on TP=keep / FP=drop):
+#   Bradycardia : add snr_proxy >= 0.84   (false brady is low-SNR; J=0.68,
+#                 TP-kept 0.89 / FP-removed 0.79) ON TOP of the HR gate.
+#   Pause       : hf_noise <= 0.000257    (false pause is an HF-noise artifact;
+#                 J=0.998, TP-kept 1.00 / FP-removed 1.00 on this sample).
+# Kept OUT of the production `fzark` profile (which must reproduce v2 exactly).
+FZARK_SQI = FZARK.copy("fzark_sqi")
+FZARK_SQI.sqi_gates['Bradycardia'] = [Gate('mean_hr_bpm', '<=', 56.3),
+                                      Gate('snr_proxy',   '>=', 0.84)]
+FZARK_SQI.sqi_gates['Pause']       = [Gate('hf_noise',    '<=', 0.000257)]
+FZARK_SQI.notes = (
+    "PROTOTYPE. fzark gates + SQI quality gates: Bradycardia snr>=0.84 (on top of "
+    "HR<=56.3), Pause hf_noise<=0.000257. Calibrated on fzark TP/fp_doctor; "
+    "device-specific. Small-n Pause TP (82) → validate before deployment."
+)
+
+
+_REGISTRY: Dict[str, DeviceProfile] = {p.device_id: p for p in (FZARK, MOVE_CHEST_GEL, FZARK_SQI)}
 DEFAULT_DEVICE = "fzark"
 
 

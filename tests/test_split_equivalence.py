@@ -94,6 +94,28 @@ def test_calibration_supervised():
           f"TP-kept={stats['tp_retained']:.2f} FP-dropped={stats['fp_removed']:.2f} ✓")
 
 
+def test_fzark_sqi_profile_gates():
+    """The prototype fzark_sqi profile adds SQI quality gates for Bradycardia + Pause
+    without disturbing fzark (equivalence test above still passes)."""
+    sqi = SQIFPSuppressor("fzark_sqi")
+    brady = {g.feature: g for g in sqi.gates_for("Bradycardia")}
+    assert brady["snr_proxy"].op == ">=" and brady["snr_proxy"].threshold == 0.84
+    assert brady["mean_hr_bpm"].threshold == 56.3                # HR gate retained
+    pause = sqi.gates_for("Pause")
+    assert len(pause) == 1 and pause[0].feature == "hf_noise" and pause[0].op == "<="
+    # low-SNR bradycardia (good rate) is now dropped; clean one kept
+    assert sqi.suppress("Bradycardia", {"mean_hr_bpm": 50, "snr_proxy": 0.3}).keep is False
+    assert sqi.suppress("Bradycardia", {"mean_hr_bpm": 50, "snr_proxy": 2.0}).keep is True
+    # HF-noisy pause dropped; clean pause kept
+    assert sqi.suppress("Pause", {"hf_noise": 0.10}).keep is False
+    assert sqi.suppress("Pause", {"hf_noise": 0.0}).keep is True
+    # fzark (production) profile is unchanged — no Pause gate, Brady = HR only
+    prod = SQIFPSuppressor("fzark")
+    assert prod.gates_for("Pause") == []
+    assert [g.feature for g in prod.gates_for("Bradycardia")] == ["mean_hr_bpm"]
+    print("[fzark_sqi] SQI quality gates present; fzark profile unchanged ✓")
+
+
 def test_calibration_envelope():
     """Label-free rest-envelope fit on MOVE-like rest motion → ~1 mG."""
     rng = np.random.default_rng(0)
@@ -109,5 +131,6 @@ if __name__ == "__main__":
     test_families_independent()
     test_vtrig_split_is_and()
     test_calibration_supervised()
+    test_fzark_sqi_profile_gates()
     test_calibration_envelope()
     print("\nALL SPLIT-FP TESTS PASSED ✓")

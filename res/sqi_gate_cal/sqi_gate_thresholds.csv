@@ -1,0 +1,7 @@
+event,feature,op,threshold,tp_retained,fp_removed,youden_j,n_tp,n_fp
+Bradycardia,snr_proxy,>=,0.83996,0.886,0.794,0.68,500,500
+Bradycardia,hf_noise,<=,0.01291,0.786,0.664,0.45,500,500
+Bradycardia,snr_proxy∧hf_noise,AND,,0.732,0.916,,500,500
+Pause,snr_proxy,>=,0.80157,0.805,0.848,0.653,82,500
+Pause,hf_noise,<=,0.00026,1.0,0.998,0.998,82,500
+Pause,snr_proxy∧hf_noise,AND,,0.805,1.0,,82,500

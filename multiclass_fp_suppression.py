@@ -128,7 +128,7 @@ PASSTHROUGH_CLASSES = {
 # ═══════════════════════════════════════════════════════════════════════════
 
 try:
-    from scipy.signal import butter, filtfilt, find_peaks
+    from scipy.signal import butter, filtfilt, find_peaks, welch
     from scipy.stats import kurtosis as scipy_kurtosis
     _HAS_SCIPY = True
 except ImportError:
@@ -234,6 +234,13 @@ def extract_features(json_path: str) -> Optional[Dict[str, float]]:
         try:
             b, a = butter(2, 0.5 / (fs / 2), btype='low')
             out['baseline_drift'] = float(np.std(filtfilt(b, a, sig)))
+        except Exception:
+            pass
+        # HF-noise ratio: power >40 Hz / total (raw ECG) — used by the SQI gate.
+        # Same definition as sqi.compute_raw_sqi['hf_noise_ratio'].
+        try:
+            f_, pxx = welch(sig, fs=fs, nperseg=min(1024, len(sig)))
+            out['hf_noise'] = float(pxx[f_ > 40].sum() / (pxx.sum() + 1e-12))
         except Exception:
             pass
         # HR from R-peaks
