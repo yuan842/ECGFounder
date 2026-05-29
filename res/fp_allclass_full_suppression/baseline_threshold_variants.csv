@@ -1,18 +1,18 @@
 event_type,n,in_label_map,class_idx,suppressor_target,bs_0.5_raw_alerts,bs_0.5_raw_rate_pct,bs_0.5_post_alerts,bs_0.5_post_rate_pct,bs_0.5_supp_gain_pct,bs_0.6_raw_alerts,bs_0.6_raw_rate_pct,bs_0.6_post_alerts,bs_0.6_post_rate_pct,bs_0.6_supp_gain_pct,bs_0.7_raw_alerts,bs_0.7_raw_rate_pct,bs_0.7_post_alerts,bs_0.7_post_rate_pct,bs_0.7_supp_gain_pct
-Atrial Fibrillation,200,True,5,Atrial Fibrillation,142,71.0,0,0.0,100.0,119,59.5,0,0.0,100.0,82,41.0,0,0.0,100.0
-Isolated Supraventricular Beat,200,True,16,none,23,11.5,23,11.5,0.0,15,7.5,15,7.5,0.0,10,5.0,10,5.0,0.0
-Isolated Ventricular Beat,200,True,9,none,62,31.0,62,31.0,0.0,50,25.0,50,25.0,0.0,37,18.5,37,18.5,0.0
-Pause,200,True,143,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
-Prolonged RR Interval,17,True,81,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
-Sinus Tachycardia,200,True,6,none,199,99.5,199,99.5,0.0,199,99.5,199,99.5,0.0,197,98.5,197,98.5,0.0
-Supraventricular Couplet,200,True,20,none,3,1.5,3,1.5,0.0,1,0.5,1,0.5,0.0,1,0.5,1,0.5,0.0
-Ventricular Couplet,200,True,91,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
-Ventricular Run,200,True,99,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
-Bradycardia,200,False,5,Bradycardia,139,69.5,24,12.0,82.73381294964028,127,63.5,21,10.5,83.46456692913385,103,51.5,17,8.5,83.49514563106796
-Custom Heart Rate,22,False,5,none,18,81.81818181818181,18,81.81818181818181,0.0,17,77.27272727272727,17,77.27272727272727,0.0,11,50.0,11,50.0,0.0
-Multiple Event,200,False,5,none,116,58.0,116,58.0,0.0,106,53.0,106,53.0,0.0,87,43.5,87,43.5,0.0
-Supraventricular Bigeminy,1,False,5,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
-Supraventricular Run,200,False,5,none,96,48.0,96,48.0,0.0,83,41.5,83,41.5,0.0,72,36.0,72,36.0,0.0
-Supraventricular Trigeminy,200,False,5,Supraventricular Trigeminy,71,35.5,6,3.0,91.54929577464789,61,30.5,5,2.5,91.80327868852459,41,20.5,5,2.5,87.8048780487805
+Atrial Fibrillation,500,True,5,Atrial Fibrillation,360,72.0,0,0.0,100.0,309,61.8,0,0.0,100.0,246,49.2,0,0.0,100.0
+Bradycardia,500,True,4,Bradycardia,16,3.2,9,1.8,43.75,13,2.6,7,1.4,46.15384615384615,11,2.2,6,1.2,45.45454545454545
+Isolated Supraventricular Beat,500,True,16,none,153,30.6,153,30.6,0.0,105,21.0,105,21.0,0.0,68,13.6,68,13.6,0.0
+Isolated Ventricular Beat,500,True,9,none,127,25.4,127,25.4,0.0,93,18.6,93,18.6,0.0,62,12.4,62,12.4,0.0
+Pause,500,True,142,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Sinus Tachycardia,500,True,6,none,495,99.0,495,99.0,0.0,493,98.6,493,98.6,0.0,491,98.2,491,98.2,0.0
+Supraventricular Bigeminy,1,True,16,none,1,100.0,1,100.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Supraventricular Couplet,500,True,19,none,11,2.2,11,2.2,0.0,5,1.0,5,1.0,0.0,2,0.4,2,0.4,0.0
+Supraventricular Run,500,True,93,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Supraventricular Trigeminy,500,True,16,Supraventricular Trigeminy,337,67.4,4,0.8,98.81305637982196,274,54.8,2,0.4,99.27007299270073,203,40.6,0,0.0,100.0
+Ventricular Couplet,500,True,9,none,98,19.6,98,19.6,0.0,76,15.2,76,15.2,0.0,53,10.6,53,10.6,0.0
+Ventricular Run,500,True,98,none,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0,0,0.0,0,0.0,0.0
+Custom Heart Rate,22,False,5,none,18,81.81818181818181,18,81.81818181818181,0.0,15,68.18181818181819,15,68.18181818181819,0.0,13,59.09090909090909,13,59.09090909090909,0.0
+Multiple Event,500,False,5,none,312,62.4,312,62.4,0.0,288,57.6,288,57.6,0.0,252,50.4,252,50.4,0.0
+Prolonged RR Interval,17,False,5,none,3,17.647058823529413,3,17.647058823529413,0.0,1,5.882352941176471,1,5.882352941176471,0.0,0,0.0,0,0.0,0.0
 Ventricular Tachycardia,1,False,5,none,1,100.0,1,100.0,0.0,1,100.0,1,100.0,0.0,1,100.0,1,100.0,0.0
-Ventricular Trigeminy,200,False,5,Ventricular Trigeminy,116,58.0,1,0.5,99.13793103448276,90,45.0,1,0.5,98.88888888888889,65,32.5,1,0.5,98.46153846153847
+Ventricular Trigeminy,500,False,5,Ventricular Trigeminy,189,37.8,3,0.6,98.41269841269842,134,26.8,2,0.4,98.50746268656717,98,19.6,0,0.0,100.0

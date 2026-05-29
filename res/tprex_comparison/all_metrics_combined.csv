@@ -1,0 +1,28 @@
+event_type,class_index,positives,negatives,roc_auc,pr_auc,f1_score,model
+Atrial Fibrillation,5,750,0,,,,Base Model
+Sinus Tachycardia,6,0,750,,,,Base Model
+Isolated Ventricular Beat,9,0,750,,,,Base Model
+Isolated Supraventricular Beat,16,0,750,,,,Base Model
+Supraventricular Couplet,20,0,750,,,,Base Model
+Prolonged RR Interval,81,0,750,,,,Base Model
+Ventricular Couplet,91,0,750,,,,Base Model
+Ventricular Run,99,0,750,,,,Base Model
+Pause,143,0,750,,,,Base Model
+Atrial Fibrillation,5,750,0,,,,Fine-tuned (AFIB)
+Sinus Tachycardia,6,0,750,,,,Fine-tuned (AFIB)
+Isolated Ventricular Beat,9,0,750,,,,Fine-tuned (AFIB)
+Isolated Supraventricular Beat,16,0,750,,,,Fine-tuned (AFIB)
+Supraventricular Couplet,20,0,750,,,,Fine-tuned (AFIB)
+Prolonged RR Interval,81,0,750,,,,Fine-tuned (AFIB)
+Ventricular Couplet,91,0,750,,,,Fine-tuned (AFIB)
+Ventricular Run,99,0,750,,,,Fine-tuned (AFIB)
+Pause,143,0,750,,,,Fine-tuned (AFIB)
+Atrial Fibrillation,5,750,0,,,,Fine-tuned (AFIB Fuzzy)
+Sinus Tachycardia,6,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Isolated Ventricular Beat,9,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Isolated Supraventricular Beat,16,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Supraventricular Couplet,20,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Prolonged RR Interval,81,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Ventricular Couplet,91,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Ventricular Run,99,0,750,,,,Fine-tuned (AFIB Fuzzy)
+Pause,143,0,750,,,,Fine-tuned (AFIB Fuzzy)

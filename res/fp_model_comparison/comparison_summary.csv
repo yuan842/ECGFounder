@@ -1,0 +1,3 @@
+model,model_threshold,n_total_FP,raw_alerts,raw_alert_rate_pct,post_supp_alerts,post_alert_rate_pct,fp_supp_count,fp_suppression_gain_pct,absolute_fp_reduction_pp
+baseline,0.5,500,347,69.4,15,3.0,332,95.67723342939482,66.4
+finetuned,0.2646,500,238,47.6,10,2.0,228,95.7983193277311,45.6

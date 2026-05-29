@@ -1,0 +1,4 @@
+event,n_tp,n_fp,tp_retention,fp_suppression,kept_tp,kept_fp
+Isolated Ventricular Beat,800,300,89.875,88.66666666666667,719,34
+Isolated Supraventricular Beat,800,300,90.5,93.66666666666667,724,19
+Sinus Tachycardia,0,300,,58.00000000000001,0,126

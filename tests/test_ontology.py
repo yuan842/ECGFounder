@@ -61,6 +61,10 @@ EXPECTED_LABEL_SUBSTRINGS = {
     "Ventricular Run":                "ventricular tachycardia",
     "Pause":                          "sinus pause",
     "Supraventricular Run":           "supraventricular tachycardia",
+    # v3.1 beat-level recoveries — route to the constituent-beat head.
+    "Supraventricular Trigeminy":     "premature atrial",
+    "Supraventricular Bigeminy":      "premature atrial",
+    "Ventricular Couplet":            "premature ventricular",
 }
 
 
@@ -85,11 +89,11 @@ class TestOntologyContents:
             )
 
     def test_event_set_matches_spec(self):
-        """v3 commits to exactly 10 supported events. Drift triggers failure."""
-        assert len(FZARK_ONTOLOGY) == 10
+        """v3.1 commits to exactly 13 supported events. Drift triggers failure."""
+        assert len(FZARK_ONTOLOGY) == 13
         expected = set(EXPECTED_LABEL_SUBSTRINGS)
         assert set(FZARK_ONTOLOGY) == expected, (
-            f"Stage v3 event set drift. "
+            f"Stage v3.1 event set drift. "
             f"Missing: {expected - set(FZARK_ONTOLOGY)}, "
             f"Unexpected: {set(FZARK_ONTOLOGY) - expected}"
         )
@@ -109,12 +113,14 @@ class TestOntologyContents:
 
 # ─── v3 invariants (single-head only; no composite events) ─────────────────
 
+# v3.1: SV Trigeminy, SV Bigeminy, V Couplet were promoted out of this set
+# because their constituent-beat head (idx 16 PAC / idx 9 PVC) fires strongly
+# enough on the fzark TP cohort to be useful as event-level detectors. The
+# events below remain unmappable because no 150-class head shows strong
+# activation on them.
 COMPOSITE_EVENTS = {
-    "Ventricular Couplet",
     "Ventricular Bigeminy",
-    "Supraventricular Bigeminy",
     "Ventricular Trigeminy",
-    "Supraventricular Trigeminy",
     "Prolonged RR Interval",
 }
 
@@ -233,7 +239,7 @@ class TestDetectionHelpers:
         assert get_index("Pause") == 142
 
     def test_get_index_returns_none_for_unsupported(self):
-        assert get_index("Ventricular Couplet") is None
+        assert get_index("Ventricular Bigeminy") is None
         assert get_index("Prolonged RR Interval") is None
         assert get_index("not a real event") is None
 
@@ -241,6 +247,12 @@ class TestDetectionHelpers:
         assert is_supported("Atrial Fibrillation")
         assert not is_supported("Ventricular Bigeminy")
         assert not is_supported("Unknown")
+
+    def test_v31_recoveries_are_supported(self):
+        """v3.1: SV Trigeminy / SV Bigeminy / V Couplet routed via beat head."""
+        assert get_index("Supraventricular Trigeminy") == 16
+        assert get_index("Supraventricular Bigeminy") == 16
+        assert get_index("Ventricular Couplet") == 9
 
     def test_detect_returns_bool_for_supported(self):
         probs = [0.0] * 150

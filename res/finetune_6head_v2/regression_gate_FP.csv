@@ -1,0 +1,13 @@
+event_type,idx,is_target,n,base_fp_rate,cand_fp_rate,delta_pp
+Atrial Fibrillation,5,True,500,0.72,0.15,-56.99999999999999
+Bradycardia,4,True,500,0.032,0.008,-2.4
+Isolated Supraventricular Beat,16,False,500,0.306,0.306,0.0
+Isolated Ventricular Beat,9,True,500,0.254,0.08,-17.4
+Pause,142,False,500,0.0,0.0,0.0
+Sinus Tachycardia,6,True,500,0.99,0.176,-81.4
+Supraventricular Bigeminy,16,False,1,1.0,1.0,0.0
+Supraventricular Couplet,19,False,500,0.022,0.022,0.0
+Supraventricular Run,93,True,500,0.0,0.0,0.0
+Supraventricular Trigeminy,16,False,500,0.674,0.674,0.0
+Ventricular Couplet,9,True,500,0.196,0.048,-14.800000000000002
+Ventricular Run,98,True,500,0.0,0.0,0.0

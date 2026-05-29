@@ -1,0 +1,10 @@
+Event Type,Parameter,Optimal Threshold,FP Suppression (%),TP Preserved (%)
+Atrial Fibrillation,afib_mean,12.0,43.5,95.5
+Pause,pause_max,30.0,15.0,N/A
+Prolonged RR Interval,pause_max,30.0,52.94117647058824,N/A
+Sinus Tachycardia,tachy_max,30.0,63.5,N/A
+Ventricular Run,tachy_max,30.0,63.5,N/A
+Isolated Ventricular Beat,ectopic_ratio,1.0,100.0,N/A
+Isolated Supraventricular Beat,ectopic_ratio,1.0,100.0,N/A
+Supraventricular Couplet,ectopic_ratio,1.0,100.0,N/A
+Ventricular Couplet,ectopic_ratio,1.0,100.0,N/A

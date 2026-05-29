@@ -1,0 +1,10 @@
+Event Type,Count,Gating Rate (%),FT FP 0.5 (%),Amb FP 0.5 (%),FT FP 0.7 (%),Amb FP 0.7 (%),FT FP 0.75 (%),Amb FP 0.75 (%)
+Atrial Fibrillation,100,0.0,23.0,23.0,15.0,15.0,11.0,11.0
+Isolated Ventricular Beat,100,100.0,38.0,0.0,26.0,0.0,22.0,0.0
+Prolonged RR Interval,17,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+Ventricular Couplet,100,100.0,0.0,0.0,0.0,0.0,0.0,0.0
+Ventricular Run,100,9.0,0.0,0.0,0.0,0.0,0.0,0.0
+Pause,100,1.0,0.0,0.0,0.0,0.0,0.0,0.0
+Sinus Tachycardia,100,24.0,100.0,76.0,98.0,75.0,98.0,75.0
+Supraventricular Couplet,100,100.0,3.0,0.0,1.0,0.0,1.0,0.0
+Isolated Supraventricular Beat,100,100.0,8.0,0.0,2.0,0.0,2.0,0.0

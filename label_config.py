@@ -9,11 +9,24 @@ Single source of truth for dataset → 150-class index mappings across:
 
 v3 design principle: every supported event maps to **exactly one** ECGFounder
 index. No multi-head logic, no MAX/AND operators, no partial-match heads.
-Composite events (bigeminy / trigeminy / couplets) and vocabulary-limited
-events (Prolonged RR Interval) are passed through to the downstream FP
-suppression filter, which already handles pattern detection via motion + SNR.
+Vocabulary-limited events (Prolonged RR Interval, Ventricular Bigeminy,
+Ventricular Trigeminy) remain passed through — the 150-class output has no
+head with strong activation on these.
 
-See `res/label_reclassification_plan.md` (v3) for the full design rationale.
+v3.1 update (2026-05-28): three composite events are recovered via their
+*constituent beat* head — Supraventricular Trigeminy and Supraventricular
+Bigeminy route to PREMATURE ATRIAL COMPLEXES (idx 16, the same head used for
+Isolated Supraventricular Beat); Ventricular Couplet routes to PREMATURE
+VENTRICULAR COMPLEXES (idx 9, the same head used for Isolated Ventricular
+Beat). The head fires on the constituent beats rather than the pattern, so
+event-level recall is achieved while pattern discrimination (couplet vs.
+isolated beat, trigeminy vs. bigeminy) is left to downstream beat-pattern
+analysis. Recall lift measured on ecg_tp_fzark at t=0.5: SV-Trigeminy 5.3% →
+96.1%, SV-Bigeminy 64.1% → 78.1%, V-Couplet 41.7% → 80.6%.
+
+See `res/label_reclassification_plan.md` (v3) for the full design rationale
+and `res/cross_dataset_supp_off/cross_dataset_performance_supp_off.md` §8 for
+the head-correlation analysis that motivated the v3.1 recovery.
 """
 from __future__ import annotations
 
@@ -73,23 +86,69 @@ class ClinicalRiskTier(Enum):
     LOW      = "low"        # benign or contextual (isolated ectopy, sinus tach)
 
 
+class ClinicalReliability(Enum):
+    """Empirical reliability tier from the production fzark + ECG-FP cohort.
+
+    Computed PPV = TP / (TP + FP) at the head's default fire threshold.
+    Sourced from `Dataset Classification Cross-Mapping.xlsx` (2026-05-28).
+    """
+    RELIABLE          = "reliable"               # PPV >= 80%
+    MODERATE_FP       = "moderate_fp"            # 20% <= PPV < 80%
+    SEVERE_FP         = "severe_fp"              # PPV < 20%
+    INSUFFICIENT_DATA = "insufficient_data"      # n < 5 in fzark
+
+
 @dataclass(frozen=True)
 class ClinicalOntologyNode:
     """One row of the fzark → ECGFounder ontology.
 
     v3 invariant: exactly one ECGFounder index per event. No operator field;
     no multi-head logic. Composite events live in FZARK_UNMAPPABLE.
+
+    v3.1 fields (from `Dataset Classification Cross-Mapping.xlsx`):
+      - fzark_ppv_pct         : empirical PPV on the production cohort
+      - clinical_reliability  : reliability tier derived from PPV
+      - clinical_support      : scientific / clinical description
     """
     canonical_name: str            # human-readable identifier
     ecgfounder_index: int          # exactly one 150-class index
     risk_tier: ClinicalRiskTier
     semantic_match: str            # "exact" | "good"
     notes: str = ""
+    # — v3.1 reliability metadata (Excel cross-mapping) —
+    fzark_ppv_pct: Optional[float] = None        # TP / (TP+FP) × 100, None if no fzark data
+    clinical_reliability: Optional[ClinicalReliability] = None
+    clinical_support: str = ""
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# fzark / ECG-FP ontology — 10 supported events
+# fzark / ECG-FP ontology — 13 supported events (v3.1)
 # ═══════════════════════════════════════════════════════════════════════════
+
+# ── Reliability metadata sourced from
+#    `Dataset Classification Cross-Mapping.xlsx` (2026-05-28) ──────────────
+# Each head's PPV is computed from production fzark TP + ECG-FP cohorts.
+# Heads that share an index in v3.1 (PAC head idx 16, PVC head idx 9) share
+# the same PPV / reliability tier — they reflect the head, not the event.
+_HEAD_RELIABILITY: dict[int, tuple[float, ClinicalReliability, str]] = {
+    4:  (26.6, ClinicalReliability.MODERATE_FP,       "SA node pacing at a rate <60 bpm. Clinically maps directly to the generalized \"Bradycardia\" alerting event."),
+    5:  (91.6, ClinicalReliability.RELIABLE,          "Irregularly irregular atrial rhythm lacking distinct P waves. Maps directly to \"Atrial Fibrillation\" continuous rhythm alerts."),
+    6:  (0.0,  ClinicalReliability.SEVERE_FP,         "SA node pacing at a rate >100 bpm. Clinically maps directly to \"Sinus Tachycardia\" physiological arousal or stress alerts."),
+    9:  (15.3, ClinicalReliability.SEVERE_FP,         "Ectopic beats originating from ventricles. Mapped to \"Isolated Ventricular Beat\" and \"Ventricular Couplet\" as these are the exact temporal event manifestations of PVC burden."),
+    16: (7.6,  ClinicalReliability.SEVERE_FP,         "Ectopic supraventricular beats. Mapped to \"Isolated Supraventricular Beat\", \"Bigeminy\", and \"Trigeminy\", as these represent the isolated and patterned temporal variations of atrial ectopy."),
+    19: (16.7, ClinicalReliability.SEVERE_FP,         "Broad category for early beats above the ventricles. Specifically mapped to \"Supraventricular Couplet\" to capture paired ectopic firing before escalating to a run/tachycardia."),
+    68: (100.0, ClinicalReliability.INSUFFICIENT_DATA, "Acute transmural myocardial ischemia/injury. Clinically maps directly to the acute \"ST Elevation\" Fzark alert signaling potential STEMI."),
+    93: (0.1,  ClinicalReliability.SEVERE_FP,         "Rapid rhythm (usually >150 bpm) originating above the ventricles. Mapped to \"Supraventricular Run\" which is the algorithmic detection of 3+ consecutive SVTs."),
+    98: (62.2, ClinicalReliability.MODERATE_FP,       "Potentially lethal rapid rhythm originating from ventricles. Mapped to \"Ventricular Run\", the exact algorithmic trigger for 3+ consecutive PVCs."),
+    142:(9.4,  ClinicalReliability.SEVERE_FP,         "Failure of the SA node to fire for >2 seconds. Mapped to \"Pause\", which is the critical algorithmic alert for transient asystole."),
+}
+
+
+def _r(idx: int) -> dict:
+    """Helper: shorthand for the reliability triple of head `idx`."""
+    ppv, rel, supp = _HEAD_RELIABILITY[idx]
+    return dict(fzark_ppv_pct=ppv, clinical_reliability=rel, clinical_support=supp)
+
 
 FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
     "Atrial Fibrillation": ClinicalOntologyNode(
@@ -97,12 +156,14 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         ecgfounder_index=5,
         risk_tier=ClinicalRiskTier.HIGH,
         semantic_match="exact",
+        **_r(5),
     ),
     "Sinus Tachycardia": ClinicalOntologyNode(
         canonical_name="SINUS TACHYCARDIA",
         ecgfounder_index=6,
         risk_tier=ClinicalRiskTier.LOW,
         semantic_match="exact",
+        **_r(6),
     ),
     "Bradycardia": ClinicalOntologyNode(
         canonical_name="SINUS BRADYCARDIA",
@@ -110,6 +171,7 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.HIGH,
         semantic_match="exact",
         notes="New in v2; was previously unmapped (n=2,155 TPs unrecovered).",
+        **_r(4),
     ),
     "ST Elevation": ClinicalOntologyNode(
         canonical_name="ST ELEVATION NOW PRESENT IN",
@@ -117,18 +179,21 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.CRITICAL,
         semantic_match="exact",
         notes="New in v2; n=1 TP — detection metrics will not be meaningful.",
+        **_r(68),
     ),
     "Isolated Ventricular Beat": ClinicalOntologyNode(
         canonical_name="PREMATURE VENTRICULAR COMPLEXES",
         ecgfounder_index=9,
         risk_tier=ClinicalRiskTier.LOW,
         semantic_match="exact",
+        **_r(9),
     ),
     "Isolated Supraventricular Beat": ClinicalOntologyNode(
         canonical_name="PREMATURE ATRIAL COMPLEXES",
         ecgfounder_index=16,
         risk_tier=ClinicalRiskTier.LOW,
         semantic_match="exact",
+        **_r(16),
     ),
     "Supraventricular Couplet": ClinicalOntologyNode(
         canonical_name="PREMATURE SUPRAVENTRICULAR COMPLEXES",
@@ -136,6 +201,7 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.MODERATE,
         semantic_match="good",
         notes="Off-by-one fix: was idx 20 (LBBB). Couplet = paired premature complexes.",
+        **_r(19),
     ),
     "Ventricular Run": ClinicalOntologyNode(
         canonical_name="VENTRICULAR TACHYCARDIA",
@@ -143,6 +209,7 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.CRITICAL,
         semantic_match="good",
         notes="Off-by-one fix: was idx 99 (EARLY REPOLARIZATION). V run = brief non-sustained VT.",
+        **_r(98),
     ),
     "Pause": ClinicalOntologyNode(
         canonical_name="WITH SINUS PAUSE",
@@ -150,6 +217,7 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.CRITICAL,
         semantic_match="good",
         notes="Off-by-one fix: was idx 143 (BIVENTRICULAR HYPERTROPHY).",
+        **_r(142),
     ),
     "Supraventricular Run": ClinicalOntologyNode(
         canonical_name="SUPRAVENTRICULAR TACHYCARDIA",
@@ -157,6 +225,42 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
         risk_tier=ClinicalRiskTier.MODERATE,
         semantic_match="good",
         notes="New in v2; SV run = brief episode of SVT.",
+        **_r(93),
+    ),
+    # ── v3.1 beat-level recoveries (composite events) ──────────────────────
+    # These three events share their target head with a sibling event:
+    # SV Trigeminy / SV Bigeminy share idx 16 with Isolated SV Beat (PAC head),
+    # V Couplet shares idx 9 with Isolated V Beat (PVC head). The head fires
+    # on the constituent beats rather than the pattern; downstream pattern
+    # analysis is required to distinguish couplet/bigeminy/trigeminy from the
+    # corresponding isolated-beat alert.
+    "Supraventricular Trigeminy": ClinicalOntologyNode(
+        canonical_name="PREMATURE ATRIAL COMPLEXES",
+        ecgfounder_index=16,
+        risk_tier=ClinicalRiskTier.LOW,
+        semantic_match="good",
+        notes="v3.1 recovery: head fires on constituent PACs; det@0.5 = 96.1% "
+              "on fzark TPs (was 5.3% via passthrough).",
+        **_r(16),
+    ),
+    "Supraventricular Bigeminy": ClinicalOntologyNode(
+        canonical_name="PREMATURE ATRIAL COMPLEXES",
+        ecgfounder_index=16,
+        risk_tier=ClinicalRiskTier.LOW,
+        semantic_match="good",
+        notes="v3.1 recovery: head fires on constituent PACs; det@0.5 = 78.1% "
+              "on fzark TPs (was 64.1% via passthrough).",
+        **_r(16),
+    ),
+    "Ventricular Couplet": ClinicalOntologyNode(
+        canonical_name="PREMATURE VENTRICULAR COMPLEXES",
+        ecgfounder_index=9,
+        risk_tier=ClinicalRiskTier.MODERATE,
+        semantic_match="good",
+        notes="v3.1 recovery: a V-couplet is two consecutive PVCs, so the PVC "
+              "head fires directly; det@0.5 = 80.6% on fzark TPs (was 41.7% "
+              "via passthrough).",
+        **_r(9),
     ),
 }
 
@@ -169,13 +273,11 @@ FZARK_UNMAPPABLE: frozenset[str] = frozenset({
     "Multiple Event",
     "Unknown",
     "Custom Heart Rate",
-    # Dropped in v3 — composite events (require multi-head logic) or
-    # partial-match heads that lose pattern information.
-    "Ventricular Couplet",
+    # v3.1: composite events with no head firing strongly on their constituent
+    # beats or pattern. SV Trigeminy, SV Bigeminy, V Couplet were recovered in
+    # v3.1 — see FZARK_ONTOLOGY above.
     "Ventricular Bigeminy",
-    "Supraventricular Bigeminy",
     "Ventricular Trigeminy",
-    "Supraventricular Trigeminy",
     "Prolonged RR Interval",
 })
 

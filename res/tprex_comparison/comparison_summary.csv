@@ -1,0 +1,4 @@
+model,roc_auc,pr_auc,f1_score,n_classes
+Base Model,,,,9
+Fine-tuned (AFIB),,,,9
+Fine-tuned (AFIB Fuzzy),,,,9
