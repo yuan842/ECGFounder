@@ -36,6 +36,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from label_config import DETECTION_SCOPE as _DETECTION_SCOPE, get_index as _get_index
+
 
 # ─── SuppressionResult dataclass (inlined; was previously in v1 module) ───
 @dataclass
@@ -332,12 +334,14 @@ class MultiClassFPSuppressor:
         # Accept and ignore v1 constructor args for backward compatibility
 
     def supported_classes(self) -> list:
-        """Return the list of event types with an active suppression rule.
+        """Return the list of event types with an active, in-scope suppression rule.
 
-        Returns an empty list when the suppressor is disabled — callers can
-        gate "is anything actively suppressed?" branches on this.
+        Filtered to DETECTION_SCOPE — events whose head is out of scope are never
+        detected, so they are not "actively suppressed". Empty when disabled.
         """
-        return list(ACTIVE_RULES.keys()) if self.enabled else []
+        if not self.enabled:
+            return []
+        return [c for c in ACTIVE_RULES if _get_index(c) in _DETECTION_SCOPE]
 
     def suppress_alert(
         self,
@@ -380,6 +384,18 @@ class MultiClassFPSuppressor:
                 final_prob=float(p), keep=True,
                 layer1_pass=True, layer2_pass=True, layer2_score=0.0,
                 reason='passthrough', features=None,
+            )
+
+        # Scope gate: only heads in DETECTION_SCOPE are detection targets. An
+        # out-of-scope event can't raise an alert to suppress, so pass through.
+        # (With scope {4,5,6,93,98,142}, this disables SV-Trigeminy[16] and
+        # V-Trigeminy[no head]; AFib[5] and Bradycardia[4] stay active.)
+        head_idx = alert_class if isinstance(alert_class, int) else _get_index(cls)
+        if head_idx not in _DETECTION_SCOPE:
+            return SuppressionResult(
+                final_prob=float(p), keep=True,
+                layer1_pass=True, layer2_pass=True, layer2_score=0.0,
+                reason='out_of_scope', features=None,
             )
 
         # Extract features
