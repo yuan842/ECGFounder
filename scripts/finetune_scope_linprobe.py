@@ -1,9 +1,11 @@
-"""Tier-1 linear probe on the detection-scope heads (idx 2, 4, 5, 6, 93, 98).
+"""Scope-aligned linear probe — trains 6 of the 7 detection-scope heads
+(idx 2, 4, 5, 6, 93, 98; Pause-142 excluded). Formerly finetune_6head_linprobe.py.
 
 Target = the 7-label detection scope (label_config.scope_indices()) MINUS Pause
 (142), which has 0 PTB-XL positives and cannot be trained here. So the 6 trainable
 heads are: 2=NormalECG, 4=SinusBradycardia, 5=AFib, 6=SinusTachy, 93=SVT, 98=VT.
-(Pause needs a non-PTB-XL source — MIMIC/fzark.)
+(Pause needs a non-PTB-XL source — MIMIC/fzark.) The "6" is the scope minus the one
+untrainable head — not a fixed/independent target list.
 
 Recipe:
   - Frozen Net1D backbone (all conv stages, requires_grad=False)
@@ -307,10 +309,32 @@ def main():
             torch.save(model.state_dict(), out_ckpt)
             print(f"    ✓ new best macro ROC — saved to {out_ckpt}")
 
-    print(f"\nDone. Best 6-head macro ROC = {best_macro_roc:.4f}")
+    print(f"\nDone. Best 6-head macro ROC (val/fold9) = {best_macro_roc:.4f}")
+
+    # ── Held-out TEST (fold 10) — evaluated ONCE on the model selected by val ──
+    if out_ckpt.exists():
+        print(f"\nReloading best checkpoint ({out_ckpt}) for held-out TEST ...")
+        model.load_state_dict(torch.load(out_ckpt, map_location=device))
+    else:
+        print("\n⚠️ no checkpoint beat baseline val — testing the final-epoch model.")
+    test_ds = MultiAngleDataset('test', ANGLES_VAL)        # fold 10
+    test_dl = DataLoader(test_ds, batch_size=128, shuffle=False, num_workers=0)
+    test_ph, test_roc, test_pr = evaluate(model, test_dl, device)
+    print("\n" + "=" * 64)
+    print("HELD-OUT TEST (PTB-XL fold 10) — scope-aligned 6-head metrics")
+    print("=" * 64)
+    NAMES = {2: 'NORMAL ECG', 4: 'Bradycardia', 5: 'AFib', 6: 'Sinus Tachy',
+             93: 'SV Run(SVT)', 98: 'V Run(VT)'}
+    for idx in TARGET_IDX:
+        h = test_ph[idx]
+        print(f"  idx {idx:>3} {NAMES.get(idx,''):<12}: ROC={h['roc']:.4f}  PR={h['pr']:.4f}  pos={h['pos']}")
+    print(f"  6-head macro: ROC={test_roc:.4f}  PR={test_pr:.4f}")
+    history.append({'epoch': 'TEST_fold10', 'macro_roc': test_roc,
+                    'macro_pr': test_pr, 'per_head': test_ph})
+
     with open(LOG_DIR / "training_history.json", 'w') as f:
         json.dump(history, f, indent=2, default=str)
-    print(f"History → {LOG_DIR / 'training_history.json'}")
+    print(f"\nHistory → {LOG_DIR / 'training_history.json'}")
 
 
 if __name__ == '__main__':

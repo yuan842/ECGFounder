@@ -440,7 +440,7 @@ For ad-hoc demo schedules (e.g. 4 hours/week): ~$2.50/month with discipline arou
 | Real PHI/HIPAA path | not here — schedule a security review |
 | HTTPS / TLS termination | not here — internal HTTP only |
 | Auto-scaling, multi-AZ | not here — single-instance MVP |
-| Model retraining pipeline | [scripts/finetune_6head_linprobe.py](../../scripts/finetune_6head_linprobe.py) and surrounding fine-tune docs |
+| Model retraining pipeline | [scripts/finetune_scope_linprobe.py](../../scripts/finetune_scope_linprobe.py) and surrounding fine-tune docs |
 
 ---
 

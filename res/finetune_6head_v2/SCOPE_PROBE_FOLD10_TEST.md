@@ -1,4 +1,4 @@
-# Scope-aligned 6-head linear probe — clean fold-10 test
+# Scope-aligned linear probe (6 of 7 heads; Pause excluded) — clean fold-10 test
 
 **Date**: 2026-05-30
 **Model**: ECGFounder base backbone (frozen) + linear probe on the **scope-aligned** heads
