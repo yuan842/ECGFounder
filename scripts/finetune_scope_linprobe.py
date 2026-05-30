@@ -86,10 +86,11 @@ class MultiAngleDataset(Dataset):
       test  → fold 10                   (the val_*deg.npz / val_60deg_split.npz)
     No patient crosses the train/val/test boundary (folds are patient-stratified).
     """
-    def __init__(self, split: str, angles=ANGLES_TRAIN):
+    def __init__(self, split: str, angles=ANGLES_TRAIN, augment=None):
         import ptbxl_splits
         if split not in ("train", "val", "test"):
             raise ValueError(split)
+        self.augment = augment        # NoiseAugmenter, applied in __getitem__ (train only)
         use_train_npz = split in ("train", "val")     # folds 1-9 live in train npz
         ecgs, ids, src_angles = [], [], []
         for a in angles:
@@ -118,8 +119,10 @@ class MultiAngleDataset(Dataset):
 
     def __len__(self): return self.ecg.shape[0]
     def __getitem__(self, idx):
-        return (torch.from_numpy(self.ecg[idx]),
-                torch.from_numpy(self.labels[idx]))
+        x = self.ecg[idx]                       # (1, 5000)
+        if self.augment is not None:
+            x = np.asarray(self.augment(x), dtype=np.float32)
+        return (torch.from_numpy(x), torch.from_numpy(self.labels[idx]))
 
 
 def install_classifier_row_freeze(model: nn.Module):
@@ -175,6 +178,13 @@ def main():
     ap.add_argument('--pos-weight-cap', type=float, default=50.0)
     ap.add_argument('--out-suffix', default='v2',
                     help="Suffix on the output checkpoint filename, e.g. 'v2' or 'v3_posw'.")
+    ap.add_argument('--noise-aug', action='store_true',
+                    help="Apply realistic ECG noise augmentation to the TRAIN split only "
+                         "(ecg_noise_aug.NoiseAugmenter) — closes the clean-train→noisy-deploy gap.")
+    ap.add_argument('--noise-snr-min', type=float, default=5.0)
+    ap.add_argument('--noise-snr-max', type=float, default=20.0)
+    ap.add_argument('--noise-p', type=float, default=0.7, help="prob. a train sample is noised")
+    ap.add_argument('--nstdb-dir', default=None, help="optional MIT-BIH NSTDB dir for real noise")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed); np.random.seed(args.seed)
@@ -189,9 +199,17 @@ def main():
     if args.pos_weight:
         print(f"pos_weight BCE: ENABLED (cap={args.pos_weight_cap})")
 
+    augmenter = None
+    if args.noise_aug:
+        from ecg_noise_aug import NoiseAugmenter
+        augmenter = NoiseAugmenter(fs=500, snr_min=args.noise_snr_min, snr_max=args.noise_snr_max,
+                                   p=args.noise_p, nstdb_dir=args.nstdb_dir, seed=args.seed)
+        print(f"Noise augmentation: ON (train only) — SNR {args.noise_snr_min}-{args.noise_snr_max} dB, "
+              f"p={args.noise_p}, source={'NSTDB+synthetic' if args.nstdb_dir else 'synthetic'}")
+
     print("\nBuilding datasets ...")
-    train_ds = MultiAngleDataset('train', ANGLES_TRAIN)
-    val_ds   = MultiAngleDataset('val',   ANGLES_VAL)
+    train_ds = MultiAngleDataset('train', ANGLES_TRAIN, augment=augmenter)   # noise on TRAIN only
+    val_ds   = MultiAngleDataset('val',   ANGLES_VAL)                        # val/test stay clean
 
     train_dl = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,  num_workers=0)
     val_dl   = DataLoader(val_ds,   batch_size=128,             shuffle=False, num_workers=0)
