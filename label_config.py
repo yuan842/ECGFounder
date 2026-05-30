@@ -122,7 +122,7 @@ class ClinicalOntologyNode:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# fzark / ECG-FP ontology — 13 supported events (v3.1)
+# fzark / ECG-FP ontology — 14 supported labels (13 v3.1 events + Normal ECG)
 # ═══════════════════════════════════════════════════════════════════════════
 
 # ── Reliability metadata sourced from
@@ -262,6 +262,18 @@ FZARK_ONTOLOGY: dict[str, ClinicalOntologyNode] = {
               "via passthrough).",
         **_r(9),
     ),
+    # Added 2026-05-29: the "normal / no-arrhythmia" reference label. Maps to the
+    # backbone NORMAL ECG head (idx 2). It is a STATE, not an arrhythmia event, so
+    # it has no fzark TP/FP cohort and therefore no empirical PPV / reliability tier.
+    "Normal ECG": ClinicalOntologyNode(
+        canonical_name="NORMAL ECG",
+        ecgfounder_index=2,
+        risk_tier=ClinicalRiskTier.LOW,
+        semantic_match="exact",
+        notes="Normal-ECG reference (no detectable arrhythmia). Backbone head 2 "
+              "(43.6% of PTB-XL is NORMAL ECG). Not an arrhythmia event → no fzark "
+              "FP cohort, so fzark_ppv_pct / clinical_reliability are unset.",
+    ),
 }
 
 
@@ -351,8 +363,9 @@ PTBXL_ACTIVE_CLASSES: frozenset[int] = frozenset({
 # │ This is the single source of truth; consistency is asserted at import.    │
 # └─────────────────────────────────────────────────────────────────────────┘
 # SCOPE_EVENT_TO_HEAD is the authoritative scope mapping (event/label → head).
-# NORMAL ECG is a backbone head, NOT a fzark arrhythmia event (so it is NOT in
-# FZARK_LABEL_MAP); it is exempt from the fzark-consistency check below.
+# NORMAL ECG is the "normal" reference label — it is now a first-class entry in the
+# fzark classification system (FZARK_ONTOLOGY / FZARK_LABEL_MAP, head 2), though it
+# is a STATE rather than an arrhythmia event (hence no empirical PPV / reliability).
 SCOPE_EVENT_TO_HEAD: dict[str, int] = {
     "Atrial Fibrillation":   5,
     "Bradycardia":           4,
@@ -381,9 +394,8 @@ DETECTION_SCOPE: dict[int, str] = {
 }
 
 # HARD invariant — fail loudly at import if the views ever drift apart. The set of
-# SCOPE_EVENT_TO_HEAD values must equal DETECTION_SCOPE's keys; fzark-mapped scope
-# events must agree with FZARK_LABEL_MAP (NORMAL ECG is exempt — not a fzark event).
-# Enforced by _assert_scope_consistency() near the bottom.
+# SCOPE_EVENT_TO_HEAD values must equal DETECTION_SCOPE's keys, and every scope label
+# must agree with FZARK_LABEL_MAP. Enforced by _assert_scope_consistency() below.
 
 
 # Per-head detection thresholds — override the 0.5 default for specific heads.
@@ -499,16 +511,11 @@ def detect_index(
 # ═══════════════════════════════════════════════════════════════════════════
 # HARD-RULE invariant — enforced at import (fail loudly if the scope drifts)
 # ═══════════════════════════════════════════════════════════════════════════
-# Scope labels that are NOT fzark arrhythmia events (backbone heads) — exempt from
-# the FZARK_LABEL_MAP agreement check.
-_NON_FZARK_SCOPE: frozenset[str] = frozenset({"Normal ECG"})
-
-
 def _assert_scope_consistency() -> None:
     """The 7-label detection scope (6 fzark events + NORMAL ECG) is a global hard
     rule. Guarantee the views stay in sync: SCOPE_EVENT_TO_HEAD values must equal
-    DETECTION_SCOPE's keys, and each fzark-mapped scope event must agree with
-    FZARK_LABEL_MAP (NORMAL ECG exempt — it is not a fzark event)."""
+    DETECTION_SCOPE's keys, and every scope label must agree with FZARK_LABEL_MAP
+    (NORMAL ECG is now a first-class fzark entry too)."""
     if len(SCOPE_EVENT_TO_HEAD) != 7:
         raise AssertionError(f"SCOPE_EVENT_TO_HEAD must hold exactly 7 labels, got {len(SCOPE_EVENT_TO_HEAD)}")
     if set(SCOPE_EVENT_TO_HEAD.values()) != set(DETECTION_SCOPE):
@@ -517,11 +524,9 @@ def _assert_scope_consistency() -> None:
             f"{sorted(SCOPE_EVENT_TO_HEAD.values())} != DETECTION_SCOPE keys {sorted(DETECTION_SCOPE)}"
         )
     for ev, head in SCOPE_EVENT_TO_HEAD.items():
-        if ev in _NON_FZARK_SCOPE:
-            continue
         if FZARK_LABEL_MAP.get(ev) != head:
             raise AssertionError(
-                f"Scope event {ev!r} head {head} disagrees with FZARK_LABEL_MAP "
+                f"Scope label {ev!r} head {head} disagrees with FZARK_LABEL_MAP "
                 f"({FZARK_LABEL_MAP.get(ev)})"
             )
 

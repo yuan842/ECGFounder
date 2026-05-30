@@ -73,11 +73,10 @@ class TestDetectionScope:
         _assert_scope_consistency()  # the import-time hard check, callable
         # views must agree: scope heads == DETECTION_SCOPE keys
         assert set(SCOPE_EVENT_TO_HEAD.values()) == set(DETECTION_SCOPE)
-        # fzark-mapped scope events agree with FZARK_LABEL_MAP; Normal ECG is exempt
-        assert "Normal ECG" not in FZARK_LABEL_MAP
+        # every scope label (incl. Normal ECG) is now a first-class fzark entry
+        assert FZARK_LABEL_MAP["Normal ECG"] == 2
         for ev, head in SCOPE_EVENT_TO_HEAD.items():
-            if ev != "Normal ECG":
-                assert FZARK_LABEL_MAP[ev] == head
+            assert FZARK_LABEL_MAP[ev] == head
 
     def test_scope_names_match_tasks_txt(self):
         tasks = load_tasks()
@@ -165,6 +164,8 @@ EXPECTED_LABEL_SUBSTRINGS = {
     "Supraventricular Trigeminy":     "premature atrial",
     "Supraventricular Bigeminy":      "premature atrial",
     "Ventricular Couplet":            "premature ventricular",
+    # 2026-05-29: normal/no-arrhythmia reference label (backbone head 2).
+    "Normal ECG":                     "normal ecg",
 }
 
 
@@ -189,8 +190,8 @@ class TestOntologyContents:
             )
 
     def test_event_set_matches_spec(self):
-        """v3.1 commits to exactly 13 supported events. Drift triggers failure."""
-        assert len(FZARK_ONTOLOGY) == 13
+        """v3.1 + Normal ECG = 14 supported labels (13 events + normal). Drift fails."""
+        assert len(FZARK_ONTOLOGY) == 14
         expected = set(EXPECTED_LABEL_SUBSTRINGS)
         assert set(FZARK_ONTOLOGY) == expected, (
             f"Stage v3.1 event set drift. "

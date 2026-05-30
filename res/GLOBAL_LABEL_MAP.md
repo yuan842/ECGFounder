@@ -26,7 +26,7 @@ The system detects **EXACTLY these 7 labels — nothing else is a valid detectio
 
 - **Source of truth**: `label_config.SCOPE_EVENT_TO_HEAD` (label→head) / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
 - `detect()` / `detect_index()` return `None` (out-of-scope, *not* a false negative) for any other head; the FP suppressor passes out-of-scope events through; eval scripts iterate `scope_indices()` only.
-- The full `FZARK_ONTOLOGY` (13 events) is retained **only for label MAPPING** — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 7 labels above.
+- The full `FZARK_ONTOLOGY` (now **14 labels** — 13 events + **Normal ECG**, head 2) is retained for label MAPPING — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 7 labels above. (Normal ECG was added to the fzark classification system 2026-05-29; it is a state, not an arrhythmia event, so it has no empirical PPV / reliability.)
 - To change the scope: edit `SCOPE_EVENT_TO_HEAD` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
 
 ---
@@ -39,14 +39,15 @@ All clinical interpretation — which head means what, which dataset's events ma
 
 ---
 
-## 1. The 13 fzark events → 10 unique 150-class heads (v3.1)
+## 1. The 14 fzark labels → 11 unique 150-class heads (v3.1 + Normal ECG)
 
 The Excel cross-mapping in §1 ratifies this exact routing. Every fzark `Event Type` either maps to one head (single-head route) or is in `FZARK_UNMAPPABLE` (passthrough — model has no useful head for it). No multi-head logic, no operators.
 
-### 1.1 Single-head routes (13 events → 10 heads)
+### 1.1 Single-head routes (14 labels → 11 heads)
 
 | Founder idx | Founder head (= PTB-XL label) | Fzark Event Type(s) | Risk tier | Mapping note |
 |---|---|---|---|---|
+| 2 | NORMAL ECG | Normal ECG *(2026-05-29; state, not an event)* | LOW | Exact match — normal reference |
 | 4 | SINUS BRADYCARDIA | Bradycardia | HIGH | Exact match |
 | 5 | ATRIAL FIBRILLATION | Atrial Fibrillation | HIGH | Exact match |
 | 6 | SINUS TACHYCARDIA | Sinus Tachycardia | LOW | Exact match |
@@ -201,10 +202,11 @@ node.risk_tier               # ClinicalRiskTier.HIGH
 detect(probs, "Atrial Fibrillation", threshold=0.5)   # True / False / None
 ```
 
-### CI guarantees ([tests/test_ontology.py](../tests/test_ontology.py), 40 tests)
+### CI guarantees ([tests/test_ontology.py](../tests/test_ontology.py), 52 tests)
 
 - `tasks.txt` SHA256 pinned to canonical hash; mismatch raises.
-- V3.1 commits to exactly **13 supported events** mapping to 10 unique heads.
+- The ontology commits to exactly **14 supported labels** (13 v3.1 events + Normal ECG) mapping to 11 unique heads.
+- The 7-label detection-scope hard rule is asserted at import (`_assert_scope_consistency`).
 - Every mapped index is `0 ≤ idx < 150` and lookup returns a head whose name contains the expected substring.
 - MIT-BIH `S` / `j` route to idx 19 (PSVC), not idx 16 (PAC) — v3 fix.
 - Composite rhythms `(B`, `(T`, `(AB` are absent from `MITDB_RHYTHM_MAP`.
