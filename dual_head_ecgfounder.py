@@ -31,6 +31,16 @@ Routing modes
     [2, 5, 6, 18, 26, 32, 36, 62, 70, 82]. Use only if your downstream
     task is on the fuzzylead2 / PTB-XL domain.
 
+- `'scope'`: align to the 7-label detection scope. Routes the scope heads the
+    scope probe trained [2, 4, 5, 6, 93, 98] (= scope_indices() minus Pause-142,
+    which is untrainable on PTB-XL → stays base) and uses the scope-probe
+    checkpoint (1_lead_ECGFounder_6head_scope.pth) by default.
+    NOTE: the scope fine-tune is a frozen-backbone LINEAR PROBE, so it already
+    equals base on all non-scope heads — therefore scope-routed DualHead is
+    byte-IDENTICAL to running the scope probe directly (verified max|Δ|=0).
+    Per-head routing only adds value over the probe when the fine checkpoint is a
+    FULLER fine-tune that also moves non-target heads (then routing protects them).
+
 - pass a `head_routing: dict[int, str]` to override per-head:
     {5: 'base', 6: 'base', 2: 'fuzzy', ...}
 """
@@ -43,12 +53,22 @@ import torch
 import torch.nn as nn
 
 from checkpoints import load_ecgfounder
+from label_config import scope_indices
 
 
 # Default routing dictionaries (head index → 'base' | 'fuzzy')
 # Unspecified heads default to 'base'.
 PTBXL_SPECIFIC_FUZZY_HEADS = (2, 18, 26, 32, 36, 62, 70, 82)
 ALL_ACTIVE_FUZZY_HEADS     = (2, 5, 6, 18, 26, 32, 36, 62, 70, 82)
+
+# 'scope' routing: align DualHead to the 7-label detection scope. Routes the
+# scope heads the scope probe actually trained — scope_indices() minus Pause(142),
+# which has 0 PTB-XL positives (untrainable) so it stays base. Uses the scope-probe
+# checkpoint as the fuzzy/fine model.
+SCOPE_UNTRAINABLE   = (142,)
+SCOPE_FUZZY_HEADS   = tuple(sorted(set(scope_indices()) - set(SCOPE_UNTRAINABLE)))   # (2,4,5,6,93,98)
+SCOPE_FINE_CKPT     = "checkpoint/1_lead_ECGFounder_6head_scope.pth"
+_DEFAULT_FUZZY_CKPT = "checkpoint/1_lead_ECGFounder_fuzzy.pth"
 
 
 class DualHeadECGFounder(nn.Module):
@@ -80,10 +100,15 @@ class DualHeadECGFounder(nn.Module):
                 fuzzy_idx = PTBXL_SPECIFIC_FUZZY_HEADS
             elif routing == 'all_active':
                 fuzzy_idx = ALL_ACTIVE_FUZZY_HEADS
+            elif routing == 'scope':
+                fuzzy_idx = SCOPE_FUZZY_HEADS
+                # scope routing pairs with the scope-probe checkpoint by default
+                if fine_ckpt == _DEFAULT_FUZZY_CKPT:
+                    fine_ckpt = SCOPE_FINE_CKPT
             else:
                 raise ValueError(
                     f"Unknown routing string: {routing!r}. Expected "
-                    f"'ptbxl_specific', 'all_active', or a dict."
+                    f"'ptbxl_specific', 'all_active', 'scope', or a dict."
                 )
             mask = torch.zeros(n_classes, dtype=torch.bool)
             mask[list(fuzzy_idx)] = True
