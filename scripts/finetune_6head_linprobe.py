@@ -1,11 +1,16 @@
-"""Tier-1 linear probe on the 6-head core (idx 4, 5, 6, 9, 93, 98).
+"""Tier-1 linear probe on the detection-scope heads (idx 2, 4, 5, 6, 93, 98).
+
+Target = the 7-label detection scope (label_config.scope_indices()) MINUS Pause
+(142), which has 0 PTB-XL positives and cannot be trained here. So the 6 trainable
+heads are: 2=NormalECG, 4=SinusBradycardia, 5=AFib, 6=SinusTachy, 93=SVT, 98=VT.
+(Pause needs a non-PTB-XL source — MIMIC/fzark.)
 
 Recipe:
   - Frozen Net1D backbone (all conv stages, requires_grad=False)
   - Frozen 144 non-target classifier rows (gradient blocked via register_hook)
   - Trainable: only the 6 target rows of dense.weight + dense.bias (6,150 params)
   - Loss: BCEWithLogitsLoss on the 6 target logits only
-  - Data: PTB-XL at 4 derived-lead angles {45°, 60°, 75°, 90°}
+  - Data: PTB-XL at 4 derived-lead angles {45°, 60°, 75°, 90°}, split folds 1-8/9/10
   - Labels: full 150-vector PTB-XL labels (joined via ecg_id → filename)
 
 Output checkpoint: checkpoint/1_lead_ECGFounder_6head_v2.pth
@@ -30,9 +35,15 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 from checkpoints import load_ecgfounder
 from device_utils import resolve_device
+import label_config as _L
 
 # Configuration
-TARGET_IDX   = [4, 5, 6, 9, 93, 98]
+# Probe target = the 7-label detection scope (label_config.scope_indices()),
+# minus heads with no PTB-XL positives to train on. Pause (142) has 0 PTB-XL
+# labels → untrainable here (needs MIMIC/fzark); everything else in scope is
+# kept. Deriving from the scope keeps this aligned automatically with the rule.
+PTBXL_UNTRAINABLE = {142}                      # Pause: 0 PTB-XL positives
+TARGET_IDX   = sorted(_L.scope_indices() - PTBXL_UNTRAINABLE)   # [2, 4, 5, 6, 93, 98]
 ALL_IDX      = list(range(150))
 NON_TARGET   = [i for i in ALL_IDX if i not in TARGET_IDX]
 ANGLES_TRAIN = (45, 60, 75, 90)
@@ -170,7 +181,8 @@ def main():
 
     out_ckpt = Path(DEFAULT_OUT.format(suffix=args.out_suffix))
     print(f"Device: {device}")
-    print(f"Target heads: {TARGET_IDX} ({'idx 4=SBR, 5=AFib, 6=STach, 9=PVC, 93=SVT, 98=VT'})")
+    print(f"Target heads (scope-aligned): {TARGET_IDX} "
+          f"({'idx 2=NormalECG, 4=SBR, 5=AFib, 6=STach, 93=SVT, 98=VT; Pause(142) excluded — 0 PTB-XL positives'})")
     print(f"Output checkpoint: {out_ckpt}")
     if args.pos_weight:
         print(f"pos_weight BCE: ENABLED (cap={args.pos_weight_cap})")
