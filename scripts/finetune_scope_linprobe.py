@@ -179,8 +179,10 @@ def main():
     ap.add_argument('--out-suffix', default='v2',
                     help="Suffix on the output checkpoint filename, e.g. 'v2' or 'v3_posw'.")
     ap.add_argument('--noise-aug', action='store_true',
-                    help="Apply realistic ECG noise augmentation to the TRAIN split only "
-                         "(ecg_noise_aug.NoiseAugmenter) — closes the clean-train→noisy-deploy gap.")
+                    help="[FROZEN — off by default] Apply ecg_noise_aug to the TRAIN split only. "
+                         "An A/B showed NO gain on noisy fzark (ΔAUROC +0.001); fzark's gap is "
+                         "device/lead, not additive noise. See docs/NOISE_AUGMENTATION_LESSON.md "
+                         "before enabling.")
     ap.add_argument('--noise-snr-min', type=float, default=5.0)
     ap.add_argument('--noise-snr-max', type=float, default=20.0)
     ap.add_argument('--noise-p', type=float, default=0.7, help="prob. a train sample is noised")

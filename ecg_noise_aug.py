@@ -1,5 +1,12 @@
 """Realistic ECG noise augmentation — close the clean-train → noisy-deploy gap.
 
+⏸ FROZEN / NOT IN USE (2026-05-30). An A/B showed this does NOT improve performance on
+the noisy fzark cohort (mean ΔAUROC +0.001) — fzark's gap is device/lead, not recoverable
+additive noise. The module is correct (SNR exact to <0.01 dB) and kept for reuse, but is
+OPT-IN and OFF by default; do not enable in training/production without a new hypothesis.
+See docs/NOISE_AUGMENTATION_LESSON.md (and res/finetune_6head_v2/NOISE_AUG_AB_FZARK.md).
+
+
 Clean training data (PTB-XL) makes heads that work on clean ECG but fail on noisy
 ambulatory ECG (we measured SVT/VT AUROC 0.99 on PTB-XL vs 0.36-0.61 on fzark single
 lead). This module mixes deployment-realistic noise into clean signals at a CONTROLLED
