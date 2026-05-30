@@ -1,0 +1,20 @@
+{
+  "subject": "3B8D",
+  "model": "stanford_mitdb_1dresnet",
+  "classes": [
+    "BIGEMINY",
+    "SINUS",
+    "TRIGEMINY",
+    "VT"
+  ],
+  "resolution_s": 0.711,
+  "n_segments": 4879,
+  "duration_s": 3469.5,
+  "pct_time_per_class": {
+    "BIGEMINY": 0.0,
+    "SINUS": 100.0,
+    "TRIGEMINY": 0.0,
+    "VT": 0.0
+  },
+  "n_nonsinus_episodes": 0
+}
