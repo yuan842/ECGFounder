@@ -36,6 +36,10 @@ data/
 *.hdf5
 *.wav
 
+# Run logs (tqdm-spam training/eval logs; regenerable, not deliverables)
+*.log
+res/**/run*.log
+
 # Large evaluation artifacts that can be regenerated
 res/mitdb_standardized/
 res/**/*.npy
