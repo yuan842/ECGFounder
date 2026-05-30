@@ -16,9 +16,11 @@ The system detects **EXACTLY these 6 fzark events — nothing else is a valid de
 | Atrial Fibrillation | 5 | ATRIAL FIBRILLATION | 0.5 |
 | Bradycardia | 4 | SINUS BRADYCARDIA | 0.5 |
 | Sinus Tachycardia | 6 | SINUS TACHYCARDIA | 0.5 |
-| Supraventricular Run | 93 | SUPRAVENTRICULAR TACHYCARDIA | 0.040 |
+| Supraventricular Run | 93 | SUPRAVENTRICULAR TACHYCARDIA | 0.5 |
 | Ventricular Run | 98 | VENTRICULAR TACHYCARDIA | 0.5 |
-| Pause | 142 | WITH SINUS PAUSE | 0.006 |
+| Pause | 142 | WITH SINUS PAUSE | 0.5 |
+
+> **All 6 heads use the 0.5 default.** The earlier noise-floor overrides (93→0.040, 142→0.006) were reverted on 2026-05-29 — they were fragile/device-specific and let weak heads fire on near-noise. Consequence: at single-lead, heads 93/98/142 stay effectively silent (0% sensitivity); detecting SV-Run/V-Run/Pause needs the fine-tuned head, not a low threshold.
 
 - **Source of truth**: `label_config.SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
 - `detect()` / `detect_index()` return `None` (out-of-scope, *not* a false negative) for any other head; the FP suppressor passes out-of-scope events through; eval scripts iterate `scope_indices()` only.

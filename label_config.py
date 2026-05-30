@@ -379,24 +379,18 @@ SCOPE_EVENTS: frozenset[str] = frozenset({
 # Per-head detection thresholds — override the 0.5 default for specific heads.
 # Heads absent here use DEFAULT_THRESHOLD (0.5).
 #
-# Calibrated on cached base probs (fzark TP positives vs fp_doctor matched
-# negatives), Youden-J optimum. See scripts/calibrate_scope_thresholds.py and
-# res/scope_threshold_cal/. The run/pause heads score in the noise floor, so 0.5
-# never fires (0% sensitivity); these lowered thresholds recover recall:
-#
-#   142 Pause   : AUROC 0.76 → thr 0.006 gives sens 0.71 / spec 0.69 (defensible)
-#    93 SV Run  : AUROC 0.61 → thr 0.040 gives sens 0.85 but PPV 0.07 (marginal,
-#                 low-confidence; included so the head can fire at all)
-#
-# Head 98 (Ventricular Run / VT) is deliberately NOT overridden: its base head is
-# WORSE THAN CHANCE on fzark (AUROC 0.36 — negatives outscore positives), so no
-# threshold yields a valid detector. Use the fine-tuned/fuzzy head for VT instead;
-# at 0.5 it stays effectively silent rather than flooding false positives.
+# DECISION (2026-05-29): ALL scope heads use the 0.5 default — no overrides.
+# Calibration (scripts/calibrate_scope_thresholds.py, res/scope_threshold_cal/)
+# found that heads 93 (SV Run) and 142 (Pause) only fire at noise-floor thresholds
+# (0.040 / 0.006) — i.e. the base single-lead model cannot really detect them.
+# Those tiny thresholds are fragile and device/cohort-specific, so they were
+# REVERTED to 0.5: heads 93/98/142 stay effectively silent at single-lead (an
+# honest "not detectable") rather than firing on near-noise. Detecting SV-Run /
+# V-Run / Pause needs the fine-tuned/fuzzy head, not a low threshold.
+# (The calibration record is kept for history; do not re-add the overrides without
+# a deliberate per-device recalibration.)
 DEFAULT_THRESHOLD: float = 0.5
-HEAD_THRESHOLDS: dict[int, float] = {
-    142: 0.006,
-    93:  0.040,
-}
+HEAD_THRESHOLDS: dict[int, float] = {}
 
 
 def head_threshold(index: int) -> float:

@@ -94,23 +94,23 @@ class TestDetectionScope:
         assert in_scope(142) and not in_scope(9)
 
     def test_per_head_threshold_values(self):
-        assert head_threshold(142) == 0.006   # Pause (calibrated)
-        assert head_threshold(93) == 0.040    # SV Run (calibrated)
-        assert head_threshold(98) == 0.5      # VT — NOT overridden (worse-than-chance)
-        assert head_threshold(5) == 0.5       # AFib — default
+        # 2026-05-29: noise-floor overrides reverted — all scope heads use 0.5.
+        assert HEAD_THRESHOLDS == {}
+        assert head_threshold(142) == 0.5    # Pause (reverted)
+        assert head_threshold(93) == 0.5     # SV Run (reverted)
+        assert head_threshold(98) == 0.5     # VT
+        assert head_threshold(5) == 0.5      # AFib
 
-    def test_calibrated_threshold_applied_by_default(self):
-        # Pause head 142 fires at a low score (0.01 > 0.006) under its calibrated thr,
+    def test_threshold_default_and_explicit_override(self):
+        # near-noise scores no longer fire any scope head (all at 0.5 now)
         probs = [0.0] * 150
         probs[142] = 0.01
+        assert detect(probs, "Pause") is False
+        # a clearly-firing score does fire
+        probs[142] = 0.9
         assert detect(probs, "Pause") is True
-        assert detect_index(probs, 142) is True
-        # ...but the same 0.01 at an un-overridden head (AFib) stays below 0.5.
-        probs2 = [0.0] * 150
-        probs2[5] = 0.01
-        assert detect(probs2, "Atrial Fibrillation") is False
         # explicit threshold override still wins
-        assert detect(probs, "Pause", threshold=0.5) is False
+        assert detect(probs, "Pause", threshold=0.95) is False
 
 
 # ─── tasks.txt integrity ────────────────────────────────────────────────────

@@ -10,9 +10,13 @@ target — anywhere in code, evals, or reports:**
 | Atrial Fibrillation | 5 | 0.5 |
 | Bradycardia | 4 | 0.5 |
 | Sinus Tachycardia | 6 | 0.5 |
-| Supraventricular Run | 93 | 0.040 |
+| Supraventricular Run | 93 | 0.5 |
 | Ventricular Run | 98 | 0.5 |
-| Pause | 142 | 0.006 |
+| Pause | 142 | 0.5 |
+
+All 6 heads use the 0.5 default (`HEAD_THRESHOLDS = {}`). Earlier noise-floor overrides
+(93→0.040, 142→0.006) were reverted 2026-05-29 as fragile/device-specific; at single-lead,
+93/98/142 stay effectively silent — detecting them needs the fine-tuned head, not a low threshold.
 
 - **Source of truth**: `label_config.SCOPE_EVENTS` (event names) and `DETECTION_SCOPE`
   (head→label), kept consistent by an **import-time assertion** (`_assert_scope_consistency`).

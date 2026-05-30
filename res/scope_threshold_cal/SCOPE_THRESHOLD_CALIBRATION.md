@@ -1,5 +1,11 @@
 # Per-head threshold calibration — scope heads 93 / 98 / 142
 
+> **⚠️ DECISION UPDATE (2026-05-29, later same day): the overrides below were REVERTED to 0.5.**
+> The 93→0.040 and 142→0.006 thresholds calibrated here are noise-floor values — fragile and
+> device/cohort-specific. `label_config.HEAD_THRESHOLDS` is now `{}` (all 6 scope heads at 0.5).
+> Consequence: SV-Run/V-Run/Pause stay effectively silent at single-lead; detecting them needs the
+> fine-tuned head, not a low threshold. **This document is retained as the calibration record only.**
+
 **Date**: 2026-05-29
 **Why**: heads 93 (SV Run), 98 (V Run/VT), 142 (Pause) were added to `DETECTION_SCOPE` but
 have **0 % sensitivity at the default 0.5** — their base-model scores sit in the noise floor.
