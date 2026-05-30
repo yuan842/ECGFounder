@@ -3,6 +3,11 @@
 **Date**: 2026-05-28
 **Purpose**: Single landing page that captures every decision, every canonical file, and every open question across the work streams active in this codebase. **Read this first before any new task** — it replaces the need to re-read prior session transcripts.
 
+> ⛔ **GLOBAL RULE (2026-05-30): PTB-XL split = folds 1–8 train / 9 validation / 10 test.** The
+> authors' patient-stratified convention; validation (9) tunes, test (10) is reported once and
+> never tuned on. Source of truth `csv/ptbxl_fold_split.csv` + `ptbxl_splits.py` (integrity asserted
+> at import). Base-model eval may use all records; fine-tuned models must respect the split.
+>
 > ⛔ **GLOBAL HARD RULE (2026-05-29): detection scope = 7 labels (6 events + Normal ECG).** The
 > system detects only **Atrial Fibrillation (5), Bradycardia (4), Sinus Tachycardia (6),
 > Supraventricular Run (93), Ventricular Run (98), Pause (142), Normal ECG (2).** Source of truth =
