@@ -1,0 +1,8 @@
+label,head,episodes,burden_s,burden_pct,longest_s,windows_fired_raw,windows_fired_after_fp
+Normal ECG,2,0,0.0,0.0,0.0,0,0
+Bradycardia,4,0,0.0,0.0,0.0,0,0
+Atrial Fibrillation,5,2,170.0,4.9,140.0,148,14
+Sinus Tachycardia,6,5,2007.0,57.9,760.0,199,199
+Supraventricular Run,93,4,80.0,2.3,30.0,8,8
+Ventricular Run,98,19,980.0,28.3,330.0,86,86
+Pause,142,0,0.0,0.0,0.0,0,0

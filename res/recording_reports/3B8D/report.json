@@ -1,0 +1,423 @@
+{
+  "recording": {
+    "subject": "3B8D",
+    "n_windows": 347,
+    "duration_s": 3467.0,
+    "window_s": 10,
+    "device": "move_chest_gel",
+    "model": "base",
+    "scope": [
+      "Atrial Fibrillation",
+      "Bradycardia",
+      "Normal ECG",
+      "Pause",
+      "Sinus Tachycardia",
+      "Supraventricular Run",
+      "Ventricular Run"
+    ]
+  },
+  "summary": [
+    {
+      "label": "Normal ECG",
+      "head": 2,
+      "episodes": 0,
+      "burden_s": 0,
+      "burden_pct": 0.0,
+      "longest_s": 0.0,
+      "windows_fired_raw": 0,
+      "windows_fired_after_fp": 0
+    },
+    {
+      "label": "Bradycardia",
+      "head": 4,
+      "episodes": 0,
+      "burden_s": 0,
+      "burden_pct": 0.0,
+      "longest_s": 0.0,
+      "windows_fired_raw": 0,
+      "windows_fired_after_fp": 0
+    },
+    {
+      "label": "Atrial Fibrillation",
+      "head": 5,
+      "episodes": 2,
+      "burden_s": 170.0,
+      "burden_pct": 4.9,
+      "longest_s": 140.0,
+      "windows_fired_raw": 148,
+      "windows_fired_after_fp": 14
+    },
+    {
+      "label": "Sinus Tachycardia",
+      "head": 6,
+      "episodes": 5,
+      "burden_s": 2007.0,
+      "burden_pct": 57.9,
+      "longest_s": 760.0,
+      "windows_fired_raw": 199,
+      "windows_fired_after_fp": 199
+    },
+    {
+      "label": "Supraventricular Run",
+      "head": 93,
+      "episodes": 4,
+      "burden_s": 80.0,
+      "burden_pct": 2.3,
+      "longest_s": 30.0,
+      "windows_fired_raw": 8,
+      "windows_fired_after_fp": 8
+    },
+    {
+      "label": "Ventricular Run",
+      "head": 98,
+      "episodes": 19,
+      "burden_s": 980.0,
+      "burden_pct": 28.3,
+      "longest_s": 330.0,
+      "windows_fired_raw": 86,
+      "windows_fired_after_fp": 86
+    },
+    {
+      "label": "Pause",
+      "head": 142,
+      "episodes": 0,
+      "burden_s": 0,
+      "burden_pct": 0.0,
+      "longest_s": 0.0,
+      "windows_fired_raw": 0,
+      "windows_fired_after_fp": 0
+    }
+  ],
+  "events": [
+    {
+      "onset_s": 643.0,
+      "offset_s": 663.0,
+      "duration_s": 20.0,
+      "n_windows": 2,
+      "n_fired": 2,
+      "peak_prob": 0.997,
+      "mean_prob": 0.971,
+      "label": "Sinus Tachycardia",
+      "head": 6
+    },
+    {
+      "onset_s": 693.0,
+      "offset_s": 703.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.992,
+      "mean_prob": 0.992,
+      "label": "Sinus Tachycardia",
+      "head": 6
+    },
+    {
+      "onset_s": 1453.0,
+      "offset_s": 1933.0,
+      "duration_s": 480.0,
+      "n_windows": 48,
+      "n_fired": 48,
+      "peak_prob": 0.979,
+      "mean_prob": 0.9,
+      "label": "Sinus Tachycardia",
+      "head": 6
+    },
+    {
+      "onset_s": 1453.0,
+      "offset_s": 1513.0,
+      "duration_s": 60.0,
+      "n_windows": 6,
+      "n_fired": 6,
+      "peak_prob": 0.709,
+      "mean_prob": 0.585,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 1533.0,
+      "offset_s": 1543.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.617,
+      "mean_prob": 0.617,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 1603.0,
+      "offset_s": 1933.0,
+      "duration_s": 330.0,
+      "n_windows": 33,
+      "n_fired": 32,
+      "peak_prob": 0.79,
+      "mean_prob": 0.629,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 1613.0,
+      "offset_s": 1643.0,
+      "duration_s": 30.0,
+      "n_windows": 3,
+      "n_fired": 3,
+      "peak_prob": 0.552,
+      "mean_prob": 0.528,
+      "label": "Supraventricular Run",
+      "head": 93
+    },
+    {
+      "onset_s": 1983.0,
+      "offset_s": 2743.0,
+      "duration_s": 760.0,
+      "n_windows": 76,
+      "n_fired": 76,
+      "peak_prob": 0.987,
+      "mean_prob": 0.844,
+      "label": "Sinus Tachycardia",
+      "head": 6
+    },
+    {
+      "onset_s": 2023.0,
+      "offset_s": 2073.0,
+      "duration_s": 50.0,
+      "n_windows": 5,
+      "n_fired": 4,
+      "peak_prob": 0.682,
+      "mean_prob": 0.561,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2283.0,
+      "offset_s": 2293.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.539,
+      "mean_prob": 0.539,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2363.0,
+      "offset_s": 2383.0,
+      "duration_s": 20.0,
+      "n_windows": 2,
+      "n_fired": 2,
+      "peak_prob": 0.55,
+      "mean_prob": 0.544,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2433.0,
+      "offset_s": 2443.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.533,
+      "mean_prob": 0.533,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2463.0,
+      "offset_s": 2543.0,
+      "duration_s": 80.0,
+      "n_windows": 8,
+      "n_fired": 5,
+      "peak_prob": 0.684,
+      "mean_prob": 0.507,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2583.0,
+      "offset_s": 2613.0,
+      "duration_s": 30.0,
+      "n_windows": 3,
+      "n_fired": 2,
+      "peak_prob": 0.713,
+      "mean_prob": 0.544,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2633.0,
+      "offset_s": 2643.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.747,
+      "mean_prob": 0.747,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2663.0,
+      "offset_s": 2733.0,
+      "duration_s": 70.0,
+      "n_windows": 7,
+      "n_fired": 5,
+      "peak_prob": 0.681,
+      "mean_prob": 0.549,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2763.0,
+      "offset_s": 3500.0,
+      "duration_s": 737.0,
+      "n_windows": 74,
+      "n_fired": 72,
+      "peak_prob": 0.991,
+      "mean_prob": 0.905,
+      "label": "Sinus Tachycardia",
+      "head": 6
+    },
+    {
+      "onset_s": 2773.0,
+      "offset_s": 2803.0,
+      "duration_s": 30.0,
+      "n_windows": 3,
+      "n_fired": 2,
+      "peak_prob": 0.585,
+      "mean_prob": 0.526,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2823.0,
+      "offset_s": 2873.0,
+      "duration_s": 50.0,
+      "n_windows": 5,
+      "n_fired": 4,
+      "peak_prob": 0.6,
+      "mean_prob": 0.494,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2893.0,
+      "offset_s": 2903.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.69,
+      "mean_prob": 0.69,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2923.0,
+      "offset_s": 2933.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.556,
+      "mean_prob": 0.556,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2953.0,
+      "offset_s": 2973.0,
+      "duration_s": 20.0,
+      "n_windows": 2,
+      "n_fired": 2,
+      "peak_prob": 0.572,
+      "mean_prob": 0.561,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 2993.0,
+      "offset_s": 3143.0,
+      "duration_s": 150.0,
+      "n_windows": 15,
+      "n_fired": 13,
+      "peak_prob": 0.81,
+      "mean_prob": 0.602,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 3003.0,
+      "offset_s": 3033.0,
+      "duration_s": 30.0,
+      "n_windows": 3,
+      "n_fired": 3,
+      "peak_prob": 0.64,
+      "mean_prob": 0.581,
+      "label": "Supraventricular Run",
+      "head": 93
+    },
+    {
+      "onset_s": 3063.0,
+      "offset_s": 3073.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.509,
+      "mean_prob": 0.509,
+      "label": "Supraventricular Run",
+      "head": 93
+    },
+    {
+      "onset_s": 3163.0,
+      "offset_s": 3183.0,
+      "duration_s": 20.0,
+      "n_windows": 2,
+      "n_fired": 2,
+      "peak_prob": 0.6,
+      "mean_prob": 0.589,
+      "label": "Ventricular Run",
+      "head": 98
+    },
+    {
+      "onset_s": 3173.0,
+      "offset_s": 3183.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.639,
+      "mean_prob": 0.639,
+      "label": "Supraventricular Run",
+      "head": 93
+    },
+    {
+      "onset_s": 3183.0,
+      "offset_s": 3213.0,
+      "duration_s": 30.0,
+      "n_windows": 3,
+      "n_fired": 3,
+      "peak_prob": 0.829,
+      "mean_prob": 0.747,
+      "label": "Atrial Fibrillation",
+      "head": 5
+    },
+    {
+      "onset_s": 3233.0,
+      "offset_s": 3373.0,
+      "duration_s": 140.0,
+      "n_windows": 14,
+      "n_fired": 11,
+      "peak_prob": 0.942,
+      "mean_prob": 0.787,
+      "label": "Atrial Fibrillation",
+      "head": 5
+    },
+    {
+      "onset_s": 3373.0,
+      "offset_s": 3383.0,
+      "duration_s": 10.0,
+      "n_windows": 1,
+      "n_fired": 1,
+      "peak_prob": 0.512,
+      "mean_prob": 0.512,
+      "label": "Ventricular Run",
+      "head": 98
+    }
+  ]
+}
