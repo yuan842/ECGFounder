@@ -35,6 +35,20 @@ target — anywhere in code, evals, or reports:**
 - **To change the scope**: edit `SCOPE_EVENTS` **and** `DETECTION_SCOPE` together, then update
   `res/GLOBAL_LABEL_MAP.md` (§ hard rule) and this file.
 
+## ⛔ GLOBAL RULE — never commit or push datasets
+
+Raw datasets, signal dumps, and model weights **must never be committed or pushed.**
+They live in `data/` (gitignored) or are regenerable artifacts.
+
+- **Blocked patterns**: anything under `data/`, and `*.npy *.npz *.pth *.pt *.ckpt *.edf
+  *.dat *.hea *.mat *.h5 *.hdf5 *.wav`, plus any blob > 50 MB.
+- **Enforced two ways**: `.gitignore` (excludes them), **and** a committed pre-commit hook
+  `scripts/git-hooks/pre-commit` wired via `git config core.hooksPath scripts/git-hooks` —
+  it aborts the commit if a dataset/large binary is staged.
+- **Fresh clone**: run `git config core.hooksPath scripts/git-hooks` once to activate the hook.
+- **Deliberate exception only**: `ALLOW_DATA=1 git commit ...` (reviewed cases).
+- When staging, prefer `git add <specific paths>`; never blanket-add data directories.
+
 ## Canonical docs
 - Label mapping + hard rule: `res/GLOBAL_LABEL_MAP.md` (sole guide).
 - Project state / decisions: `PROJECT_STATE.md`.

@@ -1,0 +1,52 @@
+#!/bin/sh
+# ──────────────────────────────────────────────────────────────────────────
+# GLOBAL RULE: never commit/push datasets or large binaries.
+# Blocks staged files that are raw signals, model weights, dataset dumps, or
+# live under data/ — and any blob > MAX_MB. Escape hatch: ALLOW_DATA=1 git commit
+# (use only for a deliberate, reviewed exception).
+# Installed via: git config core.hooksPath scripts/git-hooks
+# ──────────────────────────────────────────────────────────────────────────
+set -eu
+
+MAX_MB=50
+
+if [ "${ALLOW_DATA:-0}" = "1" ]; then
+    echo "pre-commit: ALLOW_DATA=1 — skipping dataset guard." >&2
+    exit 0
+fi
+
+# Added/Copied/Modified staged paths (NUL-safe).
+staged=$(git diff --cached --name-only --diff-filter=ACM -z | tr '\0' '\n')
+[ -z "$staged" ] && exit 0
+
+blocked=""
+# path / extension patterns that are datasets or binaries we must never track
+pattern='^data/|\.(npy|npz|pth|pt|ckpt|edf|dat|hea|mat|h5|hdf5|wav)$'
+
+printf '%s\n' "$staged" | while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    reason=""
+    if printf '%s' "$f" | grep -Eiq "$pattern"; then
+        reason="dataset/binary pattern"
+    elif [ -f "$f" ]; then
+        # size guard (portable: wc -c)
+        bytes=$(wc -c < "$f" 2>/dev/null || echo 0)
+        if [ "$bytes" -gt $((MAX_MB * 1024 * 1024)) ]; then
+            reason=">${MAX_MB}MB blob"
+        fi
+    fi
+    [ -n "$reason" ] && printf 'BLOCK\t%s\t%s\n' "$reason" "$f"
+done > .git/_precommit_block.$$ || true
+
+if [ -s ".git/_precommit_block.$$" ]; then
+    echo "" >&2
+    echo "✗ pre-commit BLOCKED — datasets / large binaries must never be committed:" >&2
+    sed 's/^BLOCK\t/  • [/; s/\t/] /' .git/_precommit_block.$$ >&2
+    echo "" >&2
+    echo "  These belong in data/ (gitignored) or are regenerable artifacts." >&2
+    echo "  If this is a deliberate, reviewed exception: ALLOW_DATA=1 git commit ..." >&2
+    rm -f ".git/_precommit_block.$$"
+    exit 1
+fi
+rm -f ".git/_precommit_block.$$"
+exit 0

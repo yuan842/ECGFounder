@@ -21,6 +21,21 @@ checkpoint/*.npz
 # External datasets (huge; not redistributable)
 data/
 
+# Raw signal / model-weight / dataset binaries — NEVER commit (global rule).
+# Also enforced by scripts/git-hooks/pre-commit (see CLAUDE.md § no-datasets rule).
+*.npy
+*.npz
+*.pth
+*.pt
+*.ckpt
+*.edf
+*.dat
+*.hea
+*.mat
+*.h5
+*.hdf5
+*.wav
+
 # Large evaluation artifacts that can be regenerated
 res/mitdb_standardized/
 res/**/*.npy
