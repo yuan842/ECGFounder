@@ -32,13 +32,24 @@ LOG_DIR      = Path("res/finetune_fuzzylead2")
 
 
 class FuzzylNpzDataset(Dataset):
-    """Loads one or more *.npz files (ecg, labels) and concatenates them in memory."""
-    def __init__(self, files):
+    """Loads one or more *.npz files (ecg, labels) and concatenates them.
+
+    If `split` is given ('train'|'val'|'test'), rows are filtered by ecg_id to the
+    recommended PTB-XL fold convention (ptbxl_splits): train=folds1-8, val=fold9,
+    test=fold10 — no patient crosses the boundary. Requires ecg_ids in the npz.
+    """
+    def __init__(self, files, split=None):
         ecg_list, lbl_list = [], []
         for f in files:
             z = np.load(f)
-            ecg_list.append(z['ecg'].astype(np.float32))
-            lbl_list.append(z['labels'].astype(np.float32))
+            ecg, lbl = z['ecg'].astype(np.float32), z['labels'].astype(np.float32)
+            if split is not None:
+                if 'ecg_ids' not in z.files:
+                    raise ValueError(f"{f} has no ecg_ids — cannot apply fold split")
+                import ptbxl_splits
+                keep = ptbxl_splits.mask_for(z['ecg_ids'], split)
+                ecg, lbl = ecg[keep], lbl[keep]
+            ecg_list.append(ecg); lbl_list.append(lbl)
         self.ecg    = np.concatenate(ecg_list, axis=0)
         self.labels = np.concatenate(lbl_list, axis=0)
         assert self.ecg.shape[0] == self.labels.shape[0]
@@ -104,12 +115,15 @@ def main():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"Device: {device}")
-    print(f"Loading train: {TRAIN_ANGLES}-deg combined ...")
+    # Recommended PTB-XL convention: train=folds1-8, val=fold9 — BOTH from the
+    # train_*deg.npz (folds 1-9), masked by ecg_id. Fold 10 (val_*deg.npz) is the
+    # held-out TEST set and is intentionally NOT used during training.
+    print(f"Loading train (folds 1-8): {TRAIN_ANGLES}-deg combined ...")
     train_files = [DATA_DIR / f"train_{a}deg.npz" for a in TRAIN_ANGLES]
-    train_ds = FuzzylNpzDataset(train_files)
+    train_ds = FuzzylNpzDataset(train_files, split='train')
     print(f"  train n = {len(train_ds)}")
-    val_ds = FuzzylNpzDataset([DATA_DIR / f"val_{VAL_ANGLE}deg.npz"])
-    print(f"  val   n = {len(val_ds)}  (angle = {VAL_ANGLE}°)")
+    val_ds = FuzzylNpzDataset(train_files, split='val')           # fold 9
+    print(f"  val   n = {len(val_ds)}  (fold 9; fold 10 reserved as test)")
 
     train_dl = DataLoader(train_ds, batch_size=args.batch_size,
                           shuffle=True,  num_workers=args.workers, pin_memory=False)

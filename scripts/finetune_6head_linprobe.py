@@ -65,23 +65,33 @@ def load_full_ptbxl_labels(ecg_ids: np.ndarray) -> np.ndarray:
 
 
 class MultiAngleDataset(Dataset):
-    """Concatenates per-angle npz files; labels come from full PTB-XL CSV."""
+    """Concatenates per-angle npz files; labels come from full PTB-XL CSV.
+
+    Honors the recommended PTB-XL fold convention (ptbxl_splits):
+      train → folds 1-8, val → fold 9  (both sourced from train_*deg.npz, which
+                                         holds folds 1-9, then masked by ecg_id)
+      test  → fold 10                   (the val_*deg.npz / val_60deg_split.npz)
+    No patient crosses the train/val/test boundary (folds are patient-stratified).
+    """
     def __init__(self, split: str, angles=ANGLES_TRAIN):
+        import ptbxl_splits
+        if split not in ("train", "val", "test"):
+            raise ValueError(split)
+        use_train_npz = split in ("train", "val")     # folds 1-9 live in train npz
         ecgs, ids, src_angles = [], [], []
         for a in angles:
-            if split == 'train':
+            if use_train_npz:
                 fn = FUZZY_DIR / f"train_{a}deg.npz"
-            elif split == 'val':
-                fn = FUZZY_DIR / (f"val_{a}deg.npz" if a != 60
-                                  else "val_60deg_split.npz")
             else:
-                raise ValueError(split)
+                fn = FUZZY_DIR / (f"val_{a}deg.npz" if a != 60 else "val_60deg_split.npz")
             if not fn.exists():
                 raise FileNotFoundError(f"{fn} not found — run scripts/build_60deg_data.py first")
             z = np.load(fn)
-            ecgs.append(z['ecg'].astype(np.float32))
-            ids.append(z['ecg_ids'])
-            src_angles.extend([a] * z['ecg'].shape[0])
+            eid = z['ecg_ids']
+            keep = ptbxl_splits.mask_for(eid, split)   # fold-based partition (1-8 / 9 / 10)
+            ecgs.append(z['ecg'][keep].astype(np.float32))
+            ids.append(eid[keep])
+            src_angles.extend([a] * int(keep.sum()))
         self.ecg = np.concatenate(ecgs, axis=0)
         self.ecg_ids = np.concatenate(ids, axis=0)
         self.angles  = np.array(src_angles, dtype=np.int32)

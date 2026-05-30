@@ -49,6 +49,18 @@ They live in `data/` (gitignored) or are regenerable artifacts.
 - **Deliberate exception only**: `ALLOW_DATA=1 git commit ...` (reviewed cases).
 - When staging, prefer `git add <specific paths>`; never blanket-add data directories.
 
+## PTB-XL train/val/test split (recommended convention)
+
+PTB-XL training/eval uses the authors' **patient-stratified fold convention**:
+**folds 1–8 = train (17,418), fold 9 = validation (2,183), fold 10 = test (2,198).**
+- Source of truth: `csv/ptbxl_fold_split.csv` (frozen manifest: ecg_id, patient_id,
+  strat_fold, split) + `ptbxl_splits.py` helper (`mask_for`, `split_of`, `assert_no_leakage`).
+- The fuzzy loaders partition the existing angle npz by ecg_id: train/val come from
+  `train_*deg.npz` (folds 1-9) masked to 1-8 / 9; test = `val_*deg.npz` (fold 10).
+- **Validation (9) is for tuning/model-selection; test (10) is reported once, never tuned on.**
+- 0 patient leakage across splits (folds are patient-stratified). Base-model eval on PTB-XL
+  may use ALL records (model never trained on PTB-XL); fine-tuned models must respect the split.
+
 ## Canonical docs
 - Label mapping + hard rule: `res/GLOBAL_LABEL_MAP.md` (sole guide).
 - Project state / decisions: `PROJECT_STATE.md`.
