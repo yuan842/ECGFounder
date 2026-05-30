@@ -7,6 +7,26 @@
 
 ---
 
+## ⛔ GLOBAL HARD RULE — detection scope = 6 events (2026-05-29)
+
+The system detects **EXACTLY these 6 fzark events — nothing else is a valid detection target, anywhere:**
+
+| fzark event | head | tasks.txt head label | threshold |
+|---|---|---|---|
+| Atrial Fibrillation | 5 | ATRIAL FIBRILLATION | 0.5 |
+| Bradycardia | 4 | SINUS BRADYCARDIA | 0.5 |
+| Sinus Tachycardia | 6 | SINUS TACHYCARDIA | 0.5 |
+| Supraventricular Run | 93 | SUPRAVENTRICULAR TACHYCARDIA | 0.040 |
+| Ventricular Run | 98 | VENTRICULAR TACHYCARDIA | 0.5 |
+| Pause | 142 | WITH SINUS PAUSE | 0.006 |
+
+- **Source of truth**: `label_config.SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
+- `detect()` / `detect_index()` return `None` (out-of-scope, *not* a false negative) for any other head; the FP suppressor passes out-of-scope events through; eval scripts iterate `scope_indices()` only.
+- The full `FZARK_ONTOLOGY` (13 events) is retained **only for label MAPPING** — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 6 events above.
+- To change the scope: edit `SCOPE_EVENTS` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
+
+---
+
 ## 0. What the ECGFounder model emits
 
 `model(x)` returns `(batch, 150)` raw logits from a single `nn.Linear(1024, 150)` head. No softmax, no sigmoid, no internal classification — this is a **multi-label** classifier. Callers apply `torch.sigmoid` externally to obtain 150 independent probabilities, each in [0, 1] with no sum-to-one constraint. A single record routinely fires multiple heads simultaneously (mean ≈ 8 heads at t=0.5 on fzark TPs).

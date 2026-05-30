@@ -14,8 +14,13 @@ from label_config import (
     ClinicalOntologyNode,
     ClinicalRiskTier,
     DETECTION_SCOPE,
+    SCOPE_EVENTS,
     HEAD_THRESHOLDS,
     head_threshold,
+    scope_events,
+    event_in_scope,
+    require_in_scope,
+    _assert_scope_consistency,
     FZARK_LABEL_MAP,
     FZARK_ONTOLOGY,
     FZARK_UNMAPPABLE,
@@ -39,6 +44,25 @@ from label_config import (
 class TestDetectionScope:
     def test_scope_indices(self):
         assert scope_indices() == frozenset({4, 5, 6, 93, 98, 142})
+
+    def test_scope_events_hard_rule(self):
+        # global hard rule: exactly these 6 fzark events
+        assert scope_events() == frozenset({
+            "Atrial Fibrillation", "Bradycardia", "Sinus Tachycardia",
+            "Supraventricular Run", "Ventricular Run", "Pause"})
+        assert len(SCOPE_EVENTS) == 6
+        assert event_in_scope("Atrial Fibrillation")
+        assert not event_in_scope("Isolated Ventricular Beat")
+
+    def test_require_in_scope_raises_out_of_scope(self):
+        assert require_in_scope("Pause") == "Pause"
+        with pytest.raises(ValueError):
+            require_in_scope("Isolated Ventricular Beat")
+
+    def test_scope_consistency_invariant_holds(self):
+        _assert_scope_consistency()  # the import-time hard check, callable
+        # the two views must agree: scope-event heads == DETECTION_SCOPE keys
+        assert {FZARK_LABEL_MAP[e] for e in SCOPE_EVENTS} == set(DETECTION_SCOPE)
 
     def test_scope_names_match_tasks_txt(self):
         tasks = load_tasks()

@@ -340,22 +340,21 @@ PTBXL_ACTIVE_CLASSES: frozenset[int] = frozenset({
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Detection scope — active ECGFounder-head allowlist
+# Detection scope — GLOBAL HARD RULE (6 events)
 # ═══════════════════════════════════════════════════════════════════════════
-# Only these ECGFounder head indices are "in scope" for detection / reporting.
-# Set by user request (2026-05-29): three rate/rhythm heads (4/5/6) plus the
-# three run/pause heads (93/98/142). Names are the tasks.txt (0-based) labels at
-# each index; validated against load_tasks() in tests/test_ontology.py (tasks.txt
-# isn't read at import time because its path is repo-root-relative and
-# load_tasks() does a hash check).
-#
-# NOTE: heads 93/98/142 carry the head's own tasks.txt label (SVT / VT / sinus
-# pause), which is a "good" — not exact — semantic match to the fzark events
-# Supraventricular Run / Ventricular Run / Pause (see FZARK_ONTOLOGY).
-#
-# Heads NOT in scope (e.g. PVC 9, PAC 16, SV Couplet 19) still have ontology
-# entries for label-mapping, but detect() returns None for them — i.e. "out of
-# scope", not a false negative.
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ HARD RULE (2026-05-29): the system detects EXACTLY these 6 fzark events.  │
+# │ Nothing else is a valid detection target — anywhere in the codebase.      │
+# │   Atrial Fibrillation (5) · Bradycardia (4) · Sinus Tachycardia (6)       │
+# │   Supraventricular Run (93) · Ventricular Run (98) · Pause (142)          │
+# │ This is the single source of truth; consistency is asserted at import.    │
+# └─────────────────────────────────────────────────────────────────────────┘
+# DETECTION_SCOPE maps each in-scope ECGFounder head index → its tasks.txt label.
+# Heads 93/98/142 carry the head's own tasks.txt label (SVT / VT / sinus pause),
+# a "good" — not exact — semantic match to the fzark events SV Run / V Run / Pause.
+# Out-of-scope heads (PVC 9, PAC 16, …) keep FZARK_ONTOLOGY entries for label
+# MAPPING, but detect()/detect_index() return None for them and the FP suppressor
+# and eval scripts skip them. (Names validated vs load_tasks() in tests.)
 DETECTION_SCOPE: dict[int, str] = {
     4:   "SINUS BRADYCARDIA",
     5:   "ATRIAL FIBRILLATION",
@@ -364,6 +363,17 @@ DETECTION_SCOPE: dict[int, str] = {
     98:  "VENTRICULAR TACHYCARDIA",        # fzark: Ventricular Run
     142: "WITH SINUS PAUSE",               # fzark: Pause
 }
+
+# The canonical 6 in-scope fzark EVENT names (the hard rule, event-centric view).
+SCOPE_EVENTS: frozenset[str] = frozenset({
+    "Atrial Fibrillation", "Bradycardia", "Sinus Tachycardia",
+    "Supraventricular Run", "Ventricular Run", "Pause",
+})
+
+# HARD invariant — fail loudly at import if the two views ever drift apart.
+# Every scope event must map (via FZARK_LABEL_MAP, defined below) to a scope head,
+# and the set of those heads must equal DETECTION_SCOPE's keys. Enforced after
+# FZARK_LABEL_MAP is defined (see _assert_scope_consistency call near the bottom).
 
 
 # Per-head detection thresholds — override the 0.5 default for specific heads.
@@ -406,6 +416,29 @@ def in_scope(index: int) -> bool:
 def scope_indices() -> frozenset[int]:
     """The set of in-scope ECGFounder head indices."""
     return frozenset(DETECTION_SCOPE)
+
+
+def scope_events() -> frozenset[str]:
+    """The 6 in-scope fzark event names (the global hard rule)."""
+    return SCOPE_EVENTS
+
+
+def event_in_scope(event_name: str) -> bool:
+    """True iff `event_name` is one of the 6 in-scope detection events."""
+    return event_name in SCOPE_EVENTS
+
+
+def require_in_scope(event_name: str) -> str:
+    """Hard guard: return `event_name` if in scope, else raise ValueError.
+
+    Use at boundaries that must never act on an out-of-scope event.
+    """
+    if event_name not in SCOPE_EVENTS:
+        raise ValueError(
+            f"{event_name!r} is out of detection scope. The hard rule allows only "
+            f"{sorted(SCOPE_EVENTS)}."
+        )
+    return event_name
 
 
 def get_index(event_name: str) -> Optional[int]:
@@ -454,3 +487,26 @@ def detect_index(
         return None
     thr = head_threshold(index) if threshold is None else threshold
     return bool(probs[index] > thr)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# HARD-RULE invariant — enforced at import (fail loudly if the scope drifts)
+# ═══════════════════════════════════════════════════════════════════════════
+def _assert_scope_consistency() -> None:
+    """The 6-event detection scope is a global hard rule. Guarantee its two views
+    stay in sync: every SCOPE_EVENTS name must map (via FZARK_LABEL_MAP) to a head,
+    and the set of those heads must equal DETECTION_SCOPE's keys exactly."""
+    if len(SCOPE_EVENTS) != 6:
+        raise AssertionError(f"SCOPE_EVENTS must hold exactly 6 events, got {len(SCOPE_EVENTS)}")
+    missing = [e for e in SCOPE_EVENTS if e not in FZARK_LABEL_MAP]
+    if missing:
+        raise AssertionError(f"SCOPE_EVENTS not in FZARK_LABEL_MAP: {missing}")
+    event_heads = {FZARK_LABEL_MAP[e] for e in SCOPE_EVENTS}
+    if event_heads != set(DETECTION_SCOPE):
+        raise AssertionError(
+            "Detection-scope hard rule violated: SCOPE_EVENTS heads "
+            f"{sorted(event_heads)} != DETECTION_SCOPE keys {sorted(DETECTION_SCOPE)}"
+        )
+
+
+_assert_scope_consistency()
