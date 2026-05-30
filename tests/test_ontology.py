@@ -43,16 +43,25 @@ from label_config import (
 
 class TestDetectionScope:
     def test_scope_indices(self):
-        assert scope_indices() == frozenset({4, 5, 6, 93, 98, 142})
+        assert scope_indices() == frozenset({2, 4, 5, 6, 93, 98, 142})
 
     def test_scope_events_hard_rule(self):
-        # global hard rule: exactly these 6 fzark events
+        # global hard rule: exactly these 7 labels (6 fzark events + Normal ECG)
         assert scope_events() == frozenset({
             "Atrial Fibrillation", "Bradycardia", "Sinus Tachycardia",
-            "Supraventricular Run", "Ventricular Run", "Pause"})
-        assert len(SCOPE_EVENTS) == 6
+            "Supraventricular Run", "Ventricular Run", "Pause", "Normal ECG"})
+        assert len(SCOPE_EVENTS) == 7
         assert event_in_scope("Atrial Fibrillation")
+        assert event_in_scope("Normal ECG")
         assert not event_in_scope("Isolated Ventricular Beat")
+
+    def test_normal_ecg_detects_by_name_and_index(self):
+        probs = [0.0] * 150
+        probs[2] = 0.9
+        assert detect(probs, "Normal ECG") is True       # via SCOPE_EVENT_TO_HEAD
+        assert detect_index(probs, 2) is True
+        probs[2] = 0.1
+        assert detect(probs, "Normal ECG") is False
 
     def test_require_in_scope_raises_out_of_scope(self):
         assert require_in_scope("Pause") == "Pause"
@@ -60,9 +69,15 @@ class TestDetectionScope:
             require_in_scope("Isolated Ventricular Beat")
 
     def test_scope_consistency_invariant_holds(self):
+        from label_config import SCOPE_EVENT_TO_HEAD
         _assert_scope_consistency()  # the import-time hard check, callable
-        # the two views must agree: scope-event heads == DETECTION_SCOPE keys
-        assert {FZARK_LABEL_MAP[e] for e in SCOPE_EVENTS} == set(DETECTION_SCOPE)
+        # views must agree: scope heads == DETECTION_SCOPE keys
+        assert set(SCOPE_EVENT_TO_HEAD.values()) == set(DETECTION_SCOPE)
+        # fzark-mapped scope events agree with FZARK_LABEL_MAP; Normal ECG is exempt
+        assert "Normal ECG" not in FZARK_LABEL_MAP
+        for ev, head in SCOPE_EVENT_TO_HEAD.items():
+            if ev != "Normal ECG":
+                assert FZARK_LABEL_MAP[ev] == head
 
     def test_scope_names_match_tasks_txt(self):
         tasks = load_tasks()

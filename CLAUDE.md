@@ -1,11 +1,11 @@
 # Project rules — ECGFounder (read first)
 
-## ⛔ GLOBAL HARD RULE — detection scope = 6 events
+## ⛔ GLOBAL HARD RULE — detection scope = 7 labels (6 events + Normal ECG)
 
-The system detects **EXACTLY these 6 fzark events. Nothing else is a valid detection
+The system detects **EXACTLY these 7 labels. Nothing else is a valid detection
 target — anywhere in code, evals, or reports:**
 
-| fzark event | ECGFounder head | per-head threshold |
+| label | ECGFounder head | per-head threshold |
 |---|---|---|
 | Atrial Fibrillation | 5 | 0.5 |
 | Bradycardia | 4 | 0.5 |
@@ -13,10 +13,15 @@ target — anywhere in code, evals, or reports:**
 | Supraventricular Run | 93 | 0.5 |
 | Ventricular Run | 98 | 0.5 |
 | Pause | 142 | 0.5 |
+| Normal ECG | 2 | 0.5 |
 
-All 6 heads use the 0.5 default (`HEAD_THRESHOLDS = {}`). Earlier noise-floor overrides
-(93→0.040, 142→0.006) were reverted 2026-05-29 as fragile/device-specific; at single-lead,
-93/98/142 stay effectively silent — detecting them needs the fine-tuned head, not a low threshold.
+- **Source of truth**: `label_config.SCOPE_EVENT_TO_HEAD` (label→head), with `SCOPE_EVENTS`
+  and `DETECTION_SCOPE`, kept consistent by an **import-time assertion**
+  (`_assert_scope_consistency`). Normal ECG is a backbone head (not a fzark event,
+  not in `FZARK_LABEL_MAP`) and is exempt from the fzark-consistency check.
+- All 7 heads use the 0.5 default (`HEAD_THRESHOLDS = {}`). Earlier noise-floor overrides
+  (93→0.040, 142→0.006) were reverted as fragile; at single-lead, 93/98/142 stay effectively
+  silent — detecting them needs the fine-tuned head, not a low threshold.
 
 - **Source of truth**: `label_config.SCOPE_EVENTS` (event names) and `DETECTION_SCOPE`
   (head→label), kept consistent by an **import-time assertion** (`_assert_scope_consistency`).

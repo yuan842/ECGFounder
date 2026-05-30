@@ -7,11 +7,11 @@
 
 ---
 
-## ⛔ GLOBAL HARD RULE — detection scope = 6 events (2026-05-29)
+## ⛔ GLOBAL HARD RULE — detection scope = 7 labels (6 events + Normal ECG)
 
-The system detects **EXACTLY these 6 fzark events — nothing else is a valid detection target, anywhere:**
+The system detects **EXACTLY these 7 labels — nothing else is a valid detection target, anywhere:**
 
-| fzark event | head | tasks.txt head label | threshold |
+| label | head | tasks.txt head label | threshold |
 |---|---|---|---|
 | Atrial Fibrillation | 5 | ATRIAL FIBRILLATION | 0.5 |
 | Bradycardia | 4 | SINUS BRADYCARDIA | 0.5 |
@@ -19,13 +19,15 @@ The system detects **EXACTLY these 6 fzark events — nothing else is a valid de
 | Supraventricular Run | 93 | SUPRAVENTRICULAR TACHYCARDIA | 0.5 |
 | Ventricular Run | 98 | VENTRICULAR TACHYCARDIA | 0.5 |
 | Pause | 142 | WITH SINUS PAUSE | 0.5 |
+| **Normal ECG** | **2** | **NORMAL ECG** | **0.5** |
 
-> **All 6 heads use the 0.5 default.** The earlier noise-floor overrides (93→0.040, 142→0.006) were reverted on 2026-05-29 — they were fragile/device-specific and let weak heads fire on near-noise. Consequence: at single-lead, heads 93/98/142 stay effectively silent (0% sensitivity); detecting SV-Run/V-Run/Pause needs the fine-tuned head, not a low threshold.
+> **Normal ECG (2026-05-29)** is a backbone head (the "normal" reference, 43.6% of PTB-XL), **not a fzark arrhythmia event** — it is in `SCOPE_EVENT_TO_HEAD`/`DETECTION_SCOPE` but **not** in `FZARK_LABEL_MAP`, and is exempt from the fzark-consistency check.
+> **All 7 heads use the 0.5 default.** The earlier noise-floor overrides (93→0.040, 142→0.006) were reverted — fragile/device-specific. Consequence: at single-lead, heads 93/98/142 stay effectively silent (0% sensitivity); detecting SV-Run/V-Run/Pause needs the fine-tuned head, not a low threshold.
 
-- **Source of truth**: `label_config.SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
+- **Source of truth**: `label_config.SCOPE_EVENT_TO_HEAD` (label→head) / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
 - `detect()` / `detect_index()` return `None` (out-of-scope, *not* a false negative) for any other head; the FP suppressor passes out-of-scope events through; eval scripts iterate `scope_indices()` only.
-- The full `FZARK_ONTOLOGY` (13 events) is retained **only for label MAPPING** — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 6 events above.
-- To change the scope: edit `SCOPE_EVENTS` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
+- The full `FZARK_ONTOLOGY` (13 events) is retained **only for label MAPPING** — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 7 labels above.
+- To change the scope: edit `SCOPE_EVENT_TO_HEAD` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
 
 ---
 

@@ -3,11 +3,13 @@
 **Date**: 2026-05-28
 **Purpose**: Single landing page that captures every decision, every canonical file, and every open question across the work streams active in this codebase. **Read this first before any new task** — it replaces the need to re-read prior session transcripts.
 
-> ⛔ **GLOBAL HARD RULE (2026-05-29): detection scope = 6 events.** The system detects only
-> **Atrial Fibrillation (5), Bradycardia (4), Sinus Tachycardia (6), Supraventricular Run (93),
-> Ventricular Run (98), Pause (142).** Source of truth = `label_config.SCOPE_EVENTS` / `DETECTION_SCOPE`,
-> enforced by an import-time assertion. Anything else is out of scope everywhere (detect → None, FP
-> suppressor passes through, eval scripts skip). See `res/GLOBAL_LABEL_MAP.md` § hard rule.
+> ⛔ **GLOBAL HARD RULE (2026-05-29): detection scope = 7 labels (6 events + Normal ECG).** The
+> system detects only **Atrial Fibrillation (5), Bradycardia (4), Sinus Tachycardia (6),
+> Supraventricular Run (93), Ventricular Run (98), Pause (142), Normal ECG (2).** Source of truth =
+> `label_config.SCOPE_EVENT_TO_HEAD` / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an import-time
+> assertion (Normal ECG is a backbone head, exempt from the fzark check). Anything else is out of
+> scope everywhere (detect → None, FP suppressor passes through, eval scripts skip). See
+> `res/GLOBAL_LABEL_MAP.md` § hard rule.
 
 ---
 

@@ -343,19 +343,35 @@ PTBXL_ACTIVE_CLASSES: frozenset[int] = frozenset({
 # Detection scope — GLOBAL HARD RULE (6 events)
 # ═══════════════════════════════════════════════════════════════════════════
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │ HARD RULE (2026-05-29): the system detects EXACTLY these 6 fzark events.  │
-# │ Nothing else is a valid detection target — anywhere in the codebase.      │
+# │ HARD RULE (2026-05-29): the system detects EXACTLY these 7 labels —       │
+# │ 6 fzark events + NORMAL ECG. Nothing else is a valid detection target.    │
 # │   Atrial Fibrillation (5) · Bradycardia (4) · Sinus Tachycardia (6)       │
 # │   Supraventricular Run (93) · Ventricular Run (98) · Pause (142)          │
+# │   Normal ECG (2)                                                          │
 # │ This is the single source of truth; consistency is asserted at import.    │
 # └─────────────────────────────────────────────────────────────────────────┘
+# SCOPE_EVENT_TO_HEAD is the authoritative scope mapping (event/label → head).
+# NORMAL ECG is a backbone head, NOT a fzark arrhythmia event (so it is NOT in
+# FZARK_LABEL_MAP); it is exempt from the fzark-consistency check below.
+SCOPE_EVENT_TO_HEAD: dict[str, int] = {
+    "Atrial Fibrillation":   5,
+    "Bradycardia":           4,
+    "Sinus Tachycardia":     6,
+    "Supraventricular Run":  93,
+    "Ventricular Run":       98,
+    "Pause":                 142,
+    "Normal ECG":            2,    # backbone NORMAL ECG head (not a fzark event)
+}
+SCOPE_EVENTS: frozenset[str] = frozenset(SCOPE_EVENT_TO_HEAD)
+
 # DETECTION_SCOPE maps each in-scope ECGFounder head index → its tasks.txt label.
 # Heads 93/98/142 carry the head's own tasks.txt label (SVT / VT / sinus pause),
-# a "good" — not exact — semantic match to the fzark events SV Run / V Run / Pause.
+# a "good" — not exact — semantic match to SV Run / V Run / Pause.
 # Out-of-scope heads (PVC 9, PAC 16, …) keep FZARK_ONTOLOGY entries for label
 # MAPPING, but detect()/detect_index() return None for them and the FP suppressor
 # and eval scripts skip them. (Names validated vs load_tasks() in tests.)
 DETECTION_SCOPE: dict[int, str] = {
+    2:   "NORMAL ECG",                     # not a fzark event — backbone head
     4:   "SINUS BRADYCARDIA",
     5:   "ATRIAL FIBRILLATION",
     6:   "SINUS TACHYCARDIA",
@@ -364,16 +380,10 @@ DETECTION_SCOPE: dict[int, str] = {
     142: "WITH SINUS PAUSE",               # fzark: Pause
 }
 
-# The canonical 6 in-scope fzark EVENT names (the hard rule, event-centric view).
-SCOPE_EVENTS: frozenset[str] = frozenset({
-    "Atrial Fibrillation", "Bradycardia", "Sinus Tachycardia",
-    "Supraventricular Run", "Ventricular Run", "Pause",
-})
-
-# HARD invariant — fail loudly at import if the two views ever drift apart.
-# Every scope event must map (via FZARK_LABEL_MAP, defined below) to a scope head,
-# and the set of those heads must equal DETECTION_SCOPE's keys. Enforced after
-# FZARK_LABEL_MAP is defined (see _assert_scope_consistency call near the bottom).
+# HARD invariant — fail loudly at import if the views ever drift apart. The set of
+# SCOPE_EVENT_TO_HEAD values must equal DETECTION_SCOPE's keys; fzark-mapped scope
+# events must agree with FZARK_LABEL_MAP (NORMAL ECG is exempt — not a fzark event).
+# Enforced by _assert_scope_consistency() near the bottom.
 
 
 # Per-head detection thresholds — override the 0.5 default for specific heads.
@@ -459,10 +469,13 @@ def detect(
     DETECTION_SCOPE — callers should treat None as out-of-scope, not a false
     negative.
     """
-    node = FZARK_ONTOLOGY.get(event_name)
-    if node is None or node.ecgfounder_index not in DETECTION_SCOPE:
+    # resolve head: scope map first (covers NORMAL ECG), else fzark ontology
+    idx = SCOPE_EVENT_TO_HEAD.get(event_name)
+    if idx is None:
+        node = FZARK_ONTOLOGY.get(event_name)
+        idx = node.ecgfounder_index if node is not None else None
+    if idx is None or idx not in DETECTION_SCOPE:
         return None
-    idx = node.ecgfounder_index
     thr = head_threshold(idx) if threshold is None else threshold
     return bool(probs[idx] > thr)
 
@@ -486,21 +499,31 @@ def detect_index(
 # ═══════════════════════════════════════════════════════════════════════════
 # HARD-RULE invariant — enforced at import (fail loudly if the scope drifts)
 # ═══════════════════════════════════════════════════════════════════════════
+# Scope labels that are NOT fzark arrhythmia events (backbone heads) — exempt from
+# the FZARK_LABEL_MAP agreement check.
+_NON_FZARK_SCOPE: frozenset[str] = frozenset({"Normal ECG"})
+
+
 def _assert_scope_consistency() -> None:
-    """The 6-event detection scope is a global hard rule. Guarantee its two views
-    stay in sync: every SCOPE_EVENTS name must map (via FZARK_LABEL_MAP) to a head,
-    and the set of those heads must equal DETECTION_SCOPE's keys exactly."""
-    if len(SCOPE_EVENTS) != 6:
-        raise AssertionError(f"SCOPE_EVENTS must hold exactly 6 events, got {len(SCOPE_EVENTS)}")
-    missing = [e for e in SCOPE_EVENTS if e not in FZARK_LABEL_MAP]
-    if missing:
-        raise AssertionError(f"SCOPE_EVENTS not in FZARK_LABEL_MAP: {missing}")
-    event_heads = {FZARK_LABEL_MAP[e] for e in SCOPE_EVENTS}
-    if event_heads != set(DETECTION_SCOPE):
+    """The 7-label detection scope (6 fzark events + NORMAL ECG) is a global hard
+    rule. Guarantee the views stay in sync: SCOPE_EVENT_TO_HEAD values must equal
+    DETECTION_SCOPE's keys, and each fzark-mapped scope event must agree with
+    FZARK_LABEL_MAP (NORMAL ECG exempt — it is not a fzark event)."""
+    if len(SCOPE_EVENT_TO_HEAD) != 7:
+        raise AssertionError(f"SCOPE_EVENT_TO_HEAD must hold exactly 7 labels, got {len(SCOPE_EVENT_TO_HEAD)}")
+    if set(SCOPE_EVENT_TO_HEAD.values()) != set(DETECTION_SCOPE):
         raise AssertionError(
-            "Detection-scope hard rule violated: SCOPE_EVENTS heads "
-            f"{sorted(event_heads)} != DETECTION_SCOPE keys {sorted(DETECTION_SCOPE)}"
+            "Detection-scope hard rule violated: SCOPE_EVENT_TO_HEAD heads "
+            f"{sorted(SCOPE_EVENT_TO_HEAD.values())} != DETECTION_SCOPE keys {sorted(DETECTION_SCOPE)}"
         )
+    for ev, head in SCOPE_EVENT_TO_HEAD.items():
+        if ev in _NON_FZARK_SCOPE:
+            continue
+        if FZARK_LABEL_MAP.get(ev) != head:
+            raise AssertionError(
+                f"Scope event {ev!r} head {head} disagrees with FZARK_LABEL_MAP "
+                f"({FZARK_LABEL_MAP.get(ev)})"
+            )
 
 
 _assert_scope_consistency()
