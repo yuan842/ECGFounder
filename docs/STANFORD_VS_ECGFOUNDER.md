@@ -6,11 +6,79 @@ project's current model (ECGFounder Net1D), including a MIT-BIH head-to-head.
 
 ---
 
+## 0. What the source papers say (paper-grounded facts)
+
+This section anchors the comparison in the two primary papers (read in full), so the
+numbers below are quotable rather than inferred.
+
+### 0a. Hannun, Rajpurkar, …, Ng — *Nature Medicine* 2019 (the `stanford/` model)
+- **Data**: 91,232 single-lead records from **53,549 patients** (abstract says 53,877),
+  recorded by the **Zio patch** (iRhythm) — a **modified Lead II at 200 Hz**, median wear 10.6 days.
+- **Classes**: **12 output rhythm classes** (10 arrhythmias + sinus rhythm + noise). **Not 14.**
+- **Architecture**: 34-layer **1D ResNet** — 16 residual blocks × 2 conv layers, filter width 16,
+  32·2ᵏ filters (k++ every 4th block), every alternate block subsamples ×2, pre-activation
+  BN→ReLU→Dropout(0.2). Trained **de-novo** (He init, Adam lr 1e-3 ×10 decay, batch 128).
+  They **tried LSTM/bidirectional recurrence and abandoned it** (no gain, slower).
+- **Output granularity**: one softmax prediction **every 256 samples = 1.28 s** ("output interval")
+  → **~23 predictions per 30 s record**. (The Executive Summary's "1 label/second, 30 per record"
+  is wrong.)
+- **Eval**: test set 328 records / 328 patients; gold standard = **3-cardiologist consensus
+  committee**, human baseline = **6 individual** cardiologists; inter-annotator agreement 72.8 %.
+- **Headline**: class-weighted **AUC 0.97** (seq 0.978 / set 0.977); **F1 0.837 > avg cardiologist
+  0.780**; DNN sensitivity ≥ avg cardiologist for all classes at cardiologist-level specificity.
+- **CinC-2017 generalization**: retrained on PhysioNet/CinC-2017 (4 classes: sinus/AF/noise/other)
+  → F1 0.83. **This is the `cinc17` checkpoint we use.**
+- **Their stated limitation** (verbatim, p.6): *"applying our algorithm sequentially across an ECG
+  record of long duration would result in non-trivial false-positive diagnoses."* — exactly the
+  long-recording FP problem our motion/SQI suppression + `report_recording.py` windowing address.
+- Code open (`github.com/awni/ecg`), test set public, **training data proprietary** (iRhythm).
+
+### 0b. Li, Aguirre, …, Westover, Hong — ECGFounder, 2025 (arXiv 2410.04133v4) — **our base model**
+- **This paper describes `1_lead_ECGFounder.pth`.** It is not a competitor — it is the foundation
+  our current stack is built on.
+- **Data — HEEDB (Harvard-Emory)**: **10,771,552 ECGs / 1,818,247 subjects**, predominantly
+  **10 s 12-lead clinical**. **150 labels** curated from 287 phrases parsed (regex) out of
+  **Marquette 12SL** GE reports → this is our `tasks.txt` / 150-head space.
+- **Architecture**: **Net1D on a RegNet backbone**, bottleneck blocks with **group convolutions +
+  channel-wise attention** (temporal **and** cross-lead). Per-record **multi-label sigmoid** over 150 heads.
+- **Training innovation — Positive-Unlabeled (PU) learning**: real labels are incomplete (missing ≠
+  negative), so a custom loss **ℒ = −(γ−p)p², γ=1.5** down-weights confident negatives. AdamW,
+  lr 1e-3, trainable temperature, batch 1024, ≤20 epochs.
+- **Single-lead via LEAD AUGMENTATION** — *the key link to this repo*: take **Lead I** from each
+  12-lead record and with 50 % probability inject one of **6 angularly-projected leads (−90°…+90°:
+  aVL, −aVR, II, −III, aVF, −aVF)**. **Our "fuzzy" angle dataset (45/60/75/90°, 60°≡Lead II) is a
+  faithful re-implementation of this exact technique** — and the basis of the scope linear-probe /
+  DualHead fine-tune.
+- **Fine-tuning**: **linear probing** (freeze backbone, train new head) or full fine-tune. Our scope
+  probe = their linear-probing recipe.
+- **Eval**: **same committee design as Hannun (they cite it)** — 3 cardiologists annotate 523 recent
+  ECGs (20 label types), 4 more compare. Committee **AUROC 0.968, sens 0.971, spec 0.937, F1 0.677 >
+  cardiologist 0.640**; >0.95 AUROC on 80 diagnoses. **External**: CODE-test avg **AUROC 0.981**
+  (> S12L-ECG 0.980, CTN 0.963, ECG-SE-ResNet 0.963); **PTB-XL 0.924**. **Single-lead external**:
+  NSR **0.975**, AF **0.957**. Table 1 (12-lead committee): AFib 0.996/F1 0.866; Sinus Tachy
+  0.996/0.833; Sinus Brady 0.995/0.791; **VT 0.903/0.635**; Normal Sinus 0.969/0.952.
+- **Downstream** (fine-tune on MIMIC-IV-ECG): age, sex, NT-proBNP, LVEF, CKD, CHD + **PPG-AFib
+  (DeepBeat)** — beats ECG-SimCLR by 2–3 and ECG-ResNet by 4–6 AUROC points.
+- Explicitly notes ECGFounder runs **cloud-side on data uploaded from wearables, not on-device** —
+  matching our MOVE framing. Code + model + data open (`github.com/PKUDigitalHealth/ECGFounder`).
+
+### 0c. Why this matters for the comparison
+- **Stanford and ECGFounder are not rivals in our stack.** Stanford is the external
+  sequence-labeling baseline; **ECGFounder is our base model**, and its paper validates the exact
+  choices we depend on (150-label space, lead augmentation = fuzzy angles, linear probing = scope probe,
+  committee evaluation).
+- **The single-lead VT gap is real**: the paper reports strong **12-lead** VT (committee 0.903,
+  PTB-XL 0.987), but our measured **single-lead** VT head is ~0.36 on fzark — the 12-lead VT strength
+  does **not** survive single-lead, which is why the VT head false-fires on MOVE and why the FP
+  machinery matters.
+
+---
+
 ## 1. What each model is
 
 | | **Stanford 1D-ResNet** (`stanford/`) | **ECGFounder** (current) |
 |---|---|---|
-| origin | Hannun, Rajpurkar, …, Ng — *Nature Medicine* 2019, "Cardiologist-level arrhythmia detection" (`awni/ecg`) | Shenda Hong et al. — ECG foundation model |
+| origin | Hannun, Rajpurkar, …, Ng — *Nature Medicine* 2019, "Cardiologist-level arrhythmia detection" (`awni/ecg`) | Li, Aguirre, …, Westover, Hong — ECGFounder, 2025 (arXiv 2410.04133; `PKUDigitalHealth/ECGFounder`) |
 | paradigm | **task-specific net, trained from scratch** per dataset | **foundation model**, pretrained on millions of ECGs, then fine-tuned/probed |
 | framework | Keras/TF (this copy ported to Keras 3 / TF 2.16) | PyTorch |
 | designed for | continuous ambulatory **rhythm strips** (iRhythm Zio patch) | per-window multi-label **diagnosis** |
@@ -26,7 +94,7 @@ A 34-layer **1D ResNet**, sequence-to-sequence:
 3. **16 residual blocks**, each: 2 conv layers (len-16, he-normal), pre-activation **BN→ReLU→Dropout(0.2)**;
    shortcut = **MaxPool** by the block stride, channels **zero-padded ×2** when widening.
    Filters **double every 4 blocks** (32→64→128→256); strides alternate 1,2,1,2… → **256× total downsampling**.
-4. **Output** — `TimeDistributed(Dense(K)) → softmax`: **one label per 256 input samples** (≈ one rhythm tag per ~1.3 s).
+4. **Output** — `TimeDistributed(Dense(K)) → softmax`: **one label per 256 input samples** (= 1.28 s at 200 Hz → ~23 tags per 30 s record).
 5. **Train** — categorical cross-entropy, Adam, early-stop + ReduceLROnPlateau.
 
 ### ECGFounder (Net1D)
@@ -42,7 +110,7 @@ A deeper/wider **1D ResNet (Net1D)**, sequence-to-**one**:
 | dimension | Stanford 1D-ResNet | ECGFounder |
 |---|---|---|
 | network family | 1D ResNet (34-layer) | 1D ResNet (Net1D) |
-| **output granularity** | **sequence** — 1 label / ~1.3 s segment | **1 global vector / record** |
+| **output granularity** | **sequence** — 1 label / 1.28 s segment (256 samp @ 200 Hz) | **1 global vector / record** |
 | **label type** | **softmax** (one mutually-exclusive class/segment) | **sigmoid** (multi-label, co-occurring) |
 | **# classes** | **few** (4 cinc17 / ~12 iRhythm) | **150** diagnoses |
 | training | **from scratch** on target data | **pretrained foundation** + fine-tune/probe |
@@ -51,7 +119,7 @@ A deeper/wider **1D ResNet (Net1D)**, sequence-to-**one**:
 | best fit | continuous Holter/patch monitoring | per-window multi-diagnosis |
 
 ### The differences that matter
-1. **Sequence vs global output** — Stanford tags every ~1.3 s of a long strip (built for continuous monitoring); ECGFounder emits one label set per 10 s. For ambulatory continuous data (fzark/MOVE), the sequence design is the more natural fit.
+1. **Sequence vs global output** — Stanford tags every 1.28 s of a long strip (built for continuous monitoring); ECGFounder emits one label set per 10 s. For ambulatory continuous data (fzark/MOVE), the sequence design is the more natural fit.
 2. **Softmax vs sigmoid** — Stanford forces one rhythm per segment; ECGFounder allows simultaneous diagnoses (it routinely co-fires ~8 heads — the reason for the scope/FP machinery).
 3. **Scratch vs foundation** — Stanford learns a small label set from one dataset; ECGFounder is a transfer-learning backbone covering 150 labels.
 
