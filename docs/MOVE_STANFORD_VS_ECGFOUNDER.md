@@ -41,6 +41,18 @@ but with real FP weaknesses (VT head) that the report makes visible.
 
 ---
 
+## Visual: same recording, two report formats
+
+![Reporting-format comparison](report_format_comparison_3B8D.png)
+
+*Top:* MOVE activity context (note the long `run` block ~21–52 min). *Middle:* Stanford — one
+continuous **SINUS** band at 0.71 s resolution (calls the whole recording normal sinus, single
+rhythm). *Bottom:* ECGFounder — 10 s **multi-label** rows. Sinus-Tachy fires almost exactly over
+the `run` block (plausibly real, not FP); AFib is mostly **hatched = raw-fired then FP-suppressed**
+by the motion gate; V-Run (VT) **false-fires** (solid red, the known weak head). One picture shows
+both the *format* difference (fine single-rhythm band vs coarse multi-label rows) and the *behavior*
+difference (Stanford silent, ECGFounder firing — with the FP gate and the run-correlation visible).
+
 ## 2. Reporting format — the bigger practical difference
 
 | | **Stanford** | **ECGFounder** |
