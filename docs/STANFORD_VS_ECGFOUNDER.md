@@ -57,6 +57,45 @@ A deeper/wider **1D ResNet (Net1D)**, sequence-to-**one**:
 
 ---
 
+## 3a. Label handling across databases (a core architectural difference)
+
+**Stanford has no global label space.** Each checkpoint's classes are **auto-derived from its training
+data** and frozen into the output layer at train time (`load.Preproc`):
+```python
+self.classes = sorted(set(l for label in labels for l in label))   # ← whatever strings are in the data
+```
+So `cinc17` → `['A','N','O','~']`, `mitdb` → `['BIGEMINY','SINUS','TRIGEMINY','VT']` — two different
+checkpoints, two different vocabularies, **no shared ontology, no canonical index space**.
+
+Consequently a **new database is handled one of two ways — they are alternatives, not steps:**
+
+| path | what you do | labels come from | cost |
+|---|---|---|---|
+| **1. Retrain** | set `num_categories` + dataset paths, train (usually from scratch — the output layer/label set changed) | **auto-derived from the new dataset's annotations** (not hand-written) → a *new checkpoint* speaking that DB's vocabulary | full training run per dataset |
+| **2. Reuse + hand-map** | keep an existing checkpoint, write a per-script `LABEL_MAP` dict translating the new DB's labels into the model's fixed classes | a **hand-written, lossy** dict (e.g. `{'SINUS':'N','AF':'A','VT':'O','BIGEMINY':'O',…}`, unknown→'O') | ad-hoc, not centralized, collapses classes |
+
+(`evaluate_mitdb.py` literally hard-codes that `LABEL_MAP` to apply the cinc17 model to MIT-BIH.) There is
+**no reusable, enforced cross-dataset mapping** — every cross-DB use reconciles labels by hand.
+
+**ECGFounder inverts this.** One **fixed 150-label vocabulary** (`tasks.txt`, SHA-pinned) is defined *once*;
+every dataset is **mapped *into* that fixed space** through a **centralized, version-controlled, import-time-enforced**
+layer — `label_config` (`FZARK_ONTOLOGY`, `SCOPE_EVENT_TO_HEAD`, `MITDB_BEAT_MAP`, `PTBXL_ACTIVE_CLASSES`) with
+`GLOBAL_LABEL_MAP.md` as the single source of truth. A new dataset needs a mapping entry, **not a retrained
+backbone** (you add a linear probe / DualHead route at most).
+
+| | **Stanford** | **ECGFounder** |
+|---|---|---|
+| label space | per-checkpoint, derived from training data | **one fixed 150-label space**, pinned once |
+| new database | **retrain** (new checkpoint) *or* **hand-map** (lossy, per-script) | **map into the fixed space** (centralized); backbone untouched |
+| cross-DB consistency | ad-hoc dicts, can disagree | centralized + **fails to import on drift** |
+| add a new condition | needs data with it + retrain | already one of 150 heads, or map an existing head |
+
+**Takeaway**: Stanford's "one model ⇄ one dataset's labels" forces per-dataset retraining or hand-mapping;
+ECGFounder's fixed vocabulary + centralized mapping is the foundation-model advantage for multi-dataset work —
+exactly why our cross-dataset evals (PTB-XL, MIT-BIH, fzark, MOVE) all reduce to entries in one label map.
+
+---
+
 ## 4. MIT-BIH head-to-head
 
 Both run on MIT-BIH — but **in fundamentally different settings**, which is the whole point:
