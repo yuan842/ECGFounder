@@ -53,6 +53,25 @@ by the motion gate; V-Run (VT) **false-fires** (solid red, the known weak head).
 both the *format* difference (fine single-rhythm band vs coarse multi-label rows) and the *behavior*
 difference (Stanford silent, ECGFounder firing — with the FP gate and the run-correlation visible).
 
+## AFib focus — both formats, AFib only
+
+![AFib format comparison](afib_format_comparison_3B8D.png)
+
+Using the Stanford **cinc17** model (which *has* an AFib class `A`, unlike the mitdb one):
+
+| | Stanford cinc17 | ECGFounder |
+|---|---|---|
+| AFib unit | P(AFib) per **0.85 s** segment | P(AFib) per **10 s** window |
+| AFib fired | **1 / 4047 segs (0.0%)**, max p=0.34 → never crosses 0.5 | **150 windows raw → 14 after motion gate** (90% suppressed) |
+| behavior on rhythm-neg MOVE | essentially **no false AFib** | over-fires during motion; gate clears most |
+
+The figure shows it cleanly: Stanford's P(AFib) stays a low continuous trace (<0.34) — flat "no AFib"
+at fine resolution. ECGFounder's P(AFib) **spikes above 0.5 throughout the `run` block** (light-blue =
+raw-fired then **FP-suppressed** by the motion gate); the few **solid-red** survivors cluster near the
+end (`walk_after`), where motion is lower so the gate lets them through → the residual false AFib.
+So for AFib specifically: Stanford ~0 FP (but applied cross-domain), ECGFounder's raw AFib FP is
+motion-driven and 90% removed by the gate, with a small motion-independent residual.
+
 ## 2. Reporting format — the bigger practical difference
 
 | | **Stanford** | **ECGFounder** |
