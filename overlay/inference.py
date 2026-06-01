@@ -35,6 +35,7 @@ class ScopedDetector:
     def __init__(self, projection_ckpt: str = DEFAULT_CKPT,
                  device=None, sqg: Optional[SignalQualityGate] = None,
                  arbiter_config: Optional[ArbiterConfig] = None,
+                 enable_l2: bool = False,
                  backbone_ckpt: Optional[str] = None):
         self.device = device or resolve_device()
         self.backbone = load_ecgfounder(self.device, ckpt_path=backbone_ckpt)
@@ -42,12 +43,12 @@ class ScopedDetector:
         self.l1 = load_l1(projection_ckpt, self.device)
         self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
         if arbiter_config is None:
-            # Production decision thresholds come from the L1 TRAINING POLICY
-            # (per-head, spec-optimised): L1 heads use the fitted threshold, the
-            # base-routed heads stay at 0.5. L2 rules still OFF by default.
+            # Decision thresholds come from the L1 TRAINING POLICY (per-head):
+            # L1 heads use the fitted threshold, base-routed heads stay at 0.5.
+            # L2 rules default OFF; enable_l2=True turns on the GT-matched arbiter.
             fire = {h: 0.5 for h in SCOPE_HEADS}
             fire.update({h: t for h, t in self.l1.thresholds().items() if h in L1_HEADS})
-            arbiter_config = ArbiterConfig(enabled=False, fire_threshold=fire)
+            arbiter_config = ArbiterConfig(enabled=enable_l2, fire_threshold=fire)
         self.arbiter_config = arbiter_config
 
     @torch.no_grad()

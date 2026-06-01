@@ -4,13 +4,17 @@ Pure function: ScopeScores → {head: Decision}. No learned weights; thresholds
 are versioned constants. SUPPRESS / MERGE only — never promotes a head (raising
 sensitivity is L1's job). Implements res/ptbxl_cofiring/MULTI_LABEL_RULES.md.
 
+The structural rules are a DIRECT IMAGE of the PTB-XL GT co-occurrence matrix
+(res/ptbxl_cofiring/gt_cofire_counts.csv): the rate-rhythm heads are pairwise
+mutually exclusive in GT (and physiologically), and SVT-Run≡V-Run are coupled.
+See res/scope_overlay/L2_DESIGN.md.
+
 Precedence (signal-quality stage lives in the SQG, upstream — NOT here):
   1. validity mask        (Pause needs adequate clean signal length)
   2. NSR contradiction    (high head-1 score + weak arrhythmia ⇒ suppress)
-  3. AFib ▸ Tachy         (both fired ⇒ drop Tachy; AF-RVR, Tachy co-fire PPV 1%)
-  4. mutual exclusion     (Brady⊕Tachy, Brady⊕AFib ⇒ keep higher-confidence)
-  5. HR plausibility      (Bradycardia requires hr_bpm ≤ ~56)
-  6. run cluster          (SVT+V-Run kept; collapsed to one alert by to_alerts())
+  3. exclusion groups     ({Brady,AFib,Tachy} pairwise GT=0 ⇒ keep one)
+  4. HR plausibility      (Bradycardia requires hr_bpm ≤ ~56)
+  5. couple groups        (SVT+V-Run co-fire kept; merged to one alert in to_alerts())
 """
 from __future__ import annotations
 
@@ -25,6 +29,16 @@ SCOPE_HEADS: list[int] = sorted(DETECTION_SCOPE)   # [4, 5, 6, 93, 98, 142]
 BRADY, AFIB, TACHY, SVT, VRUN, PAUSE = 4, 5, 6, 93, 98, 142
 NSR = 1   # out-of-scope feature head
 
+# ── GT-derived structure (PTB-XL gt_cofire_counts.csv) ───────────────────────
+# Exclusion group: every pair within it has GT co-occurrence 0 (and is
+# physiologically mutually exclusive) → at most one head may fire.
+EXCLUSION_GROUPS: list[tuple[int, ...]] = [(BRADY, AFIB, TACHY)]
+# Directional overrides applied first inside an exclusion group (winner, loser):
+# AFib beats Tachy (AF-RVR; co-firing Tachy is the FP, realness PPV ~1%).
+DIRECTIONAL: list[tuple[int, int]] = [(AFIB, TACHY)]
+# Couple group: GT Jaccard 1.0 (co-extensive) → co-fire kept, merged for alerting.
+COUPLE_GROUPS: list[tuple[int, ...]] = [(SVT, VRUN)]
+
 
 @dataclass(frozen=True)
 class ArbiterConfig:
@@ -32,16 +46,15 @@ class ArbiterConfig:
 
     When OFF, arbitrate()/to_alerts() are pure pass-through: candidate firings
     (prob ≥ fire_threshold) flow through unchanged, no suppression, no merge.
-    When ON, each rule can still be toggled individually. Thresholds are
-    placeholders to calibrate from res/ptbxl_cofiring/*.csv.
+    When ON, each rule can be toggled. The exclusion/couple structure is derived
+    from the PTB-XL GT co-occurrence matrix (module constants above).
     """
     enabled: bool = False          # ← master switch, kept OFF for now
     # float (same for all heads) OR dict[head]→threshold (per-head policy points)
     fire_threshold: "float | dict[int, float]" = 0.5
     # per-rule toggles (only consulted when enabled=True)
     nsr_contradiction: bool = True
-    afib_over_tachy: bool = True
-    mutual_exclusion: bool = True
+    rate_exclusion: bool = True    # GT-derived mutual exclusion among rate heads
     hr_plausibility: bool = True
     merge_runs: bool = True
     # thresholds
@@ -51,13 +64,15 @@ class ArbiterConfig:
 
 # default instance — L2 OFF
 DEFAULT_CONFIG = ArbiterConfig()
+# ready-to-use GT-matched config (L2 ON); detector stays OFF unless given this
+GT_MATCHED_CONFIG = ArbiterConfig(enabled=True)
 
 
 def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, Decision]:
     cfg = config or DEFAULT_CONFIG
     ft = cfg.fire_threshold
     def _thr(h: int) -> float:
-        return float(ft[h]) if isinstance(ft, dict) else float(ft)
+        return float(ft.get(h, 0.5)) if isinstance(ft, dict) else float(ft)
     p = {h: float(s.probs.get(h, 0.0)) for h in SCOPE_HEADS}
     fired = {h: p[h] >= _thr(h) for h in SCOPE_HEADS}
 
@@ -74,6 +89,9 @@ def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, 
             fired[h] = False
             reason[h] = f"suppressed: {why}"
 
+    def margin(h: int) -> float:           # confidence above this head's threshold
+        return p[h] - _thr(h)
+
     # 1. validity mask (placeholder — Pause needs adequate clean signal length)
 
     # 2. NSR contradiction (head-1 score is an FP feature, not a detection)
@@ -82,27 +100,32 @@ def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, 
             if fired[h] and p[h] < cfg.tau_weak:
                 suppress(h, f"NSR-contradiction (nsr={s.nsr_score:.2f}, p={p[h]:.2f})")
 
-    # 3. AFib ▸ Tachy  (AF with rapid ventricular response double-counted)
-    if cfg.afib_over_tachy and fired[AFIB] and fired[TACHY]:
-        suppress(TACHY, "AFib▸Tachy (AF-RVR; Tachy is the FP member)")
+    # 3. exclusion groups — GT pairwise 0 ⇒ at most one head fires.
+    #    Directional overrides first (AFib▸Tachy), then keep best margin-over-threshold.
+    if cfg.rate_exclusion:
+        for group in EXCLUSION_GROUPS:
+            for hi, lo in DIRECTIONAL:
+                if hi in group and lo in group and fired[hi] and fired[lo]:
+                    suppress(lo, f"{DETECTION_SCOPE[hi]}▸{DETECTION_SCOPE[lo]} (AF-RVR)")
+            members = [h for h in group if fired[h]]
+            if len(members) > 1:
+                best = max(members, key=margin)
+                for h in members:
+                    if h != best:
+                        suppress(h, f"excl: kept {DETECTION_SCOPE[best]} "
+                                    f"(margin {margin(h):+.2f}<{margin(best):+.2f})")
 
-    # 4. mutual exclusion — keep the higher-confidence head
-    if cfg.mutual_exclusion:
-        for a, b in ((BRADY, TACHY), (BRADY, AFIB)):
-            if fired[a] and fired[b]:
-                lo, hi = (a, b) if p[a] <= p[b] else (b, a)
-                suppress(lo, f"mutual-exclusion vs {DETECTION_SCOPE[hi]} (p {p[lo]:.2f}<{p[hi]:.2f})")
-
-    # 5. HR plausibility — Bradycardia requires a slow rate
+    # 4. HR plausibility — Bradycardia requires a slow rate
     if cfg.hr_plausibility:
         hr = s.context.get("hr_bpm")
         if fired[BRADY] and hr is not None and hr > cfg.hr_brady_max:
             suppress(BRADY, f"HR {hr:.0f}>{cfg.hr_brady_max} bpm (not bradycardic)")
 
-    # 6. run cluster — keep BOTH heads in the record (collapse handled in to_alerts)
-    if fired[SVT] and fired[VRUN]:
-        reason[SVT] += " | run-cluster(origin uncertain)"
-        reason[VRUN] += " | run-cluster(origin uncertain)"
+    # 5. couple groups — keep BOTH (collapse handled in to_alerts)
+    for group in COUPLE_GROUPS:
+        if all(fired[h] for h in group):
+            for h in group:
+                reason[h] += " | couple(origin uncertain)"
 
     return {h: Decision(h, fired[h], p[h], reason[h]) for h in SCOPE_HEADS}
 
@@ -132,12 +155,15 @@ def to_alerts(decisions: dict[int, Decision],
 
 
 if __name__ == "__main__":
-    # demo: AFib+Tachy double-fire with a slow-HR bradycardia
+    # demo: all 3 rate heads fire (exclusion group) + SVT/VT couple
     demo = ScopeScores(
-        probs={AFIB: 0.92, TACHY: 0.61, BRADY: 0.80, SVT: 0.0, VRUN: 0.0, PAUSE: 0.0},
+        probs={BRADY: 0.80, AFIB: 0.92, TACHY: 0.61, SVT: 0.7, VRUN: 0.7, PAUSE: 0.0},
         nsr_score=0.0, context={"hr_bpm": 72.0},
     )
-    for tag, cfg in (("OFF (default)", DEFAULT_CONFIG), ("ON", ArbiterConfig(enabled=True))):
+    for tag, cfg in (("OFF (default)", DEFAULT_CONFIG), ("ON (GT-matched)", GT_MATCHED_CONFIG)):
         print(f"\nL2 {tag}:")
-        for h, d in arbitrate(demo, cfg).items():
-            print(f"  head {h:>3} {DETECTION_SCOPE[h]:<28} fired={d.fired!s:<5} {d.reason}")
+        d = arbitrate(demo, cfg)
+        for h, dec in d.items():
+            print(f"  head {h:>3} {DETECTION_SCOPE[h]:<28} fired={dec.fired!s:<5} {dec.reason}")
+        non_run, run = to_alerts(d, cfg)
+        print("  alerts:", [DETECTION_SCOPE[x.head] for x in non_run], "| run:", run)
