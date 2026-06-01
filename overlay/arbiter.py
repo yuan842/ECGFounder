@@ -36,7 +36,8 @@ class ArbiterConfig:
     placeholders to calibrate from res/ptbxl_cofiring/*.csv.
     """
     enabled: bool = False          # ← master switch, kept OFF for now
-    fire_threshold: float = 0.5
+    # float (same for all heads) OR dict[head]→threshold (per-head policy points)
+    fire_threshold: "float | dict[int, float]" = 0.5
     # per-rule toggles (only consulted when enabled=True)
     nsr_contradiction: bool = True
     afib_over_tachy: bool = True
@@ -54,8 +55,11 @@ DEFAULT_CONFIG = ArbiterConfig()
 
 def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, Decision]:
     cfg = config or DEFAULT_CONFIG
+    ft = cfg.fire_threshold
+    def _thr(h: int) -> float:
+        return float(ft[h]) if isinstance(ft, dict) else float(ft)
     p = {h: float(s.probs.get(h, 0.0)) for h in SCOPE_HEADS}
-    fired = {h: p[h] >= cfg.fire_threshold for h in SCOPE_HEADS}
+    fired = {h: p[h] >= _thr(h) for h in SCOPE_HEADS}
 
     # ── L2 OFF: pure pass-through (no rules) ─────────────────────────────────
     if not cfg.enabled:

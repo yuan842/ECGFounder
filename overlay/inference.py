@@ -41,7 +41,14 @@ class ScopedDetector:
         self.backbone.eval()
         self.l1 = load_l1(projection_ckpt, self.device)
         self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
-        self.arbiter_config = arbiter_config or ArbiterConfig()   # L2 OFF by default
+        if arbiter_config is None:
+            # Production decision thresholds come from the L1 TRAINING POLICY
+            # (per-head, spec-optimised): L1 heads use the fitted threshold, the
+            # base-routed heads stay at 0.5. L2 rules still OFF by default.
+            fire = {h: 0.5 for h in SCOPE_HEADS}
+            fire.update({h: t for h, t in self.l1.thresholds().items() if h in L1_HEADS})
+            arbiter_config = ArbiterConfig(enabled=False, fire_threshold=fire)
+        self.arbiter_config = arbiter_config
 
     @torch.no_grad()
     def score(self, signal: torch.Tensor, *, context: dict | None = None,

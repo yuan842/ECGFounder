@@ -38,10 +38,18 @@ class ScopeProjection(nn.Module):
         self.proj = nn.Linear(n_in, len(self.heads))
         # per-head temperature for post-hoc calibration (1.0 = identity until fit)
         self.register_buffer("temperature", torch.ones(len(self.heads)))
+        # per-head decision threshold set by the L1 TRAINING POLICY (spec-optimised
+        # under a max sensitivity-drop constraint). 0.5 until fit on validation.
+        # See res/scope_overlay/L1_TRAINING_POLICY.md.
+        self.register_buffer("decision_threshold", 0.5 * torch.ones(len(self.heads)))
 
     def forward(self, logits150: torch.Tensor) -> torch.Tensor:
         z = self.proj(logits150) / self.temperature
         return torch.sigmoid(z)
+
+    def thresholds(self) -> dict[int, float]:
+        """Per-head decision thresholds (policy-fit) keyed by tasks.txt index."""
+        return {h: float(self.decision_threshold[i]) for i, h in enumerate(self.heads)}
 
     @torch.no_grad()
     def predict(self, logits150: torch.Tensor,
@@ -61,11 +69,18 @@ class ScopeProjection(nn.Module):
         )
 
 
-DEFAULT_CKPT = "res/scope_overlay/scope_projection.pth"
+# Production L1 = "fuzzySL" — iteration 2, trained on PTB-XL fuzzy derived-leads
+# (45/60/75/90°). Chosen for its precision: best lead-II PPV (macro 0.66) and the
+# most conservative / lowest-false-alert head behaviour. See
+# res/scope_overlay/ITERATION_COMPARISON.md. Other iterations kept for reference:
+#   scope_projection.pth        iter1 (lead-II)
+#   scope_projection_fuzzy.pth  iter2 (fuzzy)  ← same weights as fuzzySL.pth
+#   scope_projection_union.pth  iter3 (union)
+DEFAULT_CKPT = "res/scope_overlay/fuzzySL.pth"
 
 
 def load(checkpoint_path: str = DEFAULT_CKPT, device: str = "cpu") -> ScopeProjection:
-    """Load the trained L1 projection (PTB-XL, see res/scope_overlay/REPORT.md)."""
+    """Load the production L1 projection (fuzzySL; see res/scope_overlay/ITERATION_COMPARISON.md)."""
     m = ScopeProjection()
     m.load_state_dict(torch.load(checkpoint_path, map_location=device))
     m.eval()

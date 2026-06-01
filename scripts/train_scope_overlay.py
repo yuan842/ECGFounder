@@ -132,6 +132,50 @@ def split_idx(ecg_ids, fm):
             np.where(folds == 9)[0], np.where(folds == 10)[0])
 
 
+# ── L1 TRAINING POLICY (2026-06-01, rev 2) ───────────────────────────────────
+# Improve per-head SPECIFICITY by choosing the threshold that MAXIMIZES F1,
+# subject to sensitivity dropping no more than MAX_SENS_DROP (default 0.05 = 5pp)
+# below the BASELINE head at 0.5. Applied to the production L1 heads only
+# (Brady/AFib/Tachy). Fit on validation; report PR-AUC and the max-F1 threshold.
+# See res/scope_overlay/L1_TRAINING_POLICY.md.
+POLICY_HEADS = (4, 5, 6)
+
+
+def fit_policy_thresholds(p_l1_va, base_va, Yva, scope_cols, max_drop, margin=0.02):
+    """Per-head threshold = argmax F1 s.t. sens ≥ base_sens − max_drop (+margin).
+
+    Returns (thresholds, info) where info rows are
+    (head, base_sens, floor, tau*, sens, spec, f1, pr_auc) at the max-F1 point."""
+    thr = np.full(len(scope_cols), 0.5, dtype=np.float32)
+    info = []
+    for i, h in enumerate(scope_cols):
+        if h not in POLICY_HEADS:
+            continue
+        y = Yva[:, i]; npos = int(y.sum()); nneg = int((y == 0).sum())
+        if npos == 0:
+            continue
+        base_sens = float(((base_va[:, i] >= 0.5) & (y == 1)).sum() / npos)
+        floor = max(0.0, base_sens - max_drop) + margin
+        p = p_l1_va[:, i]
+        grid = np.unique(np.concatenate([p, np.linspace(0.01, 0.99, 99)]))
+        best = (-1.0, 0.5, 0.0, 0.0)   # f1, tau, sens, spec
+        for t in grid:
+            f = p >= t
+            tp = int((f & (y == 1)).sum()); fp = int((f & (y == 0)).sum())
+            sens = tp / npos
+            if sens < floor:
+                continue
+            ppv = tp / max(1, tp + fp)
+            f1 = 2 * ppv * sens / max(1e-9, ppv + sens)
+            spec = (nneg - fp) / max(1, nneg)
+            if f1 > best[0]:
+                best = (f1, float(t), sens, spec)
+        pr = float(average_precision_score(y, p))
+        thr[i] = float(np.clip(best[1], 0.01, 0.99))
+        info.append((h, base_sens, floor, best[1], best[2], best[3], best[0], pr))
+    return thr, info
+
+
 def metrics(y, p):
     out = {}
     for i, h in enumerate(SCOPE_HEADS):
@@ -157,6 +201,15 @@ def main():
     ap.add_argument("--include-leadii", action="store_true", default=True)
     ap.add_argument("--ptbxl-only", action="store_true",
                     help="Train on PTB-XL lead-II ONLY (no fuzzy, no fzark).")
+    ap.add_argument("--fuzzy-only", action="store_true",
+                    help="Train on PTB-XL fuzzy derived-leads ONLY (no lead-II).")
+    ap.add_argument("--out", default=f"{OUT_DIR}/scope_projection.pth",
+                    help="Checkpoint output path.")
+    ap.add_argument("--spec-opt", action="store_true", default=True,
+                    help="Apply the L1 training policy: max-F1 per-head thresholds "
+                         "under a max sensitivity-drop constraint.")
+    ap.add_argument("--max-sens-drop", type=float, default=0.05,
+                    help="Max allowed sensitivity drop vs baseline (pp). Default 0.05.")
     args = ap.parse_args()
     if args.ptbxl_only:
         args.angles = []
@@ -167,11 +220,14 @@ def main():
 
     scope_cols = SCOPE_HEADS  # 150-vector columns for the 6 scope heads
 
-    print("Loading PTB-XL lead-II features ...")
-    f0, l0, e0 = load_ptbxl_leadii()
-    print(f"  lead-II n={len(e0)}")
-
-    if args.angles:
+    if args.fuzzy_only:
+        print("PTB-XL FUZZY derived-leads ONLY (no lead-II).")
+        model = load_ecgfounder(device); model.eval()
+        feats, labels, ecg_ids = load_fuzzy(args.angles, model, device, label_lookup())
+    elif args.angles:
+        print("Loading PTB-XL lead-II features ...")
+        f0, l0, e0 = load_ptbxl_leadii()
+        print(f"  lead-II n={len(e0)}")
         print("Loading fuzzy derived-lead features (backbone fwd, cached) ...")
         model = load_ecgfounder(device); model.eval()
         f1, l1, e1 = load_fuzzy(args.angles, model, device, label_lookup())
@@ -180,7 +236,7 @@ def main():
         ecg_ids = np.concatenate([e0, e1], 0)
     else:
         print("PTB-XL lead-II ONLY (no fuzzy, no fzark).")
-        feats, labels, ecg_ids = f0, l0, e0
+        feats, labels, ecg_ids = load_ptbxl_leadii()
     Y = labels[:, scope_cols]
     fm = fold_map()
     tr, va, te = split_idx(ecg_ids, fm)
@@ -235,7 +291,20 @@ def main():
                 best_l, best_t = l, float(t)
         temps[i] = best_t
     proj.temperature.copy_(temps)
-    torch.save(proj.state_dict(), f"{OUT_DIR}/scope_projection.pth")
+
+    # ── L1 TRAINING POLICY: spec-optimised per-head thresholds (fit on val) ──
+    if args.spec_opt:
+        with torch.no_grad():
+            pva = proj(Xva).numpy()
+        base_va = 1.0 / (1.0 + np.exp(-feats[va][:, scope_cols]))
+        thr, info = fit_policy_thresholds(pva, base_va, Yva.numpy(), scope_cols, args.max_sens_drop)
+        proj.decision_threshold.copy_(torch.tensor(thr))
+        print(f"\nL1 policy thresholds (max-F1, max sens drop {args.max_sens_drop:.0%}) — val:")
+        for h, bs, fl, t, se, sp, f1, pr in info:
+            print(f"  head {h:>3} base_sens={bs:.3f} floor={fl:.3f} -> tau={t:.3f} | "
+                  f"val sens={se:.3f} spec={sp:.3f} F1={f1:.3f} PR-AUC={pr:.3f}")
+
+    torch.save(proj.state_dict(), args.out)
 
     # ── evaluate fold-10 test: L1 vs BASE backbone head ──────────────────────
     def eval_block(mask_idx, tag):
@@ -254,12 +323,14 @@ def main():
                   f"{b['ppv']:.3f}→{l['ppv']:.3f}   ({h})")
         return m_l1, m_base
 
-    # lead-II-only test rows (source 0) within fold 10
-    is_leadii = np.zeros(len(feats), bool); is_leadii[:len(e0)] = True
-    te_leadii = np.array([i for i in te if is_leadii[i]])
-    te_fuzzy = np.array([i for i in te if not is_leadii[i]])
+    # lead-II rows are the leading block only when lead-II was loaded
+    n_leadii = 0 if args.fuzzy_only else (21799 if not args.angles else 21799)
+    is_leadii = np.zeros(len(feats), bool); is_leadii[:n_leadii] = True
+    te_leadii = np.array([i for i in te if is_leadii[i]], dtype=int)
+    te_fuzzy = np.array([i for i in te if not is_leadii[i]], dtype=int)
     res = {}
-    res["leadII"] = eval_block(te_leadii, "PTB-XL lead-II")
+    if len(te_leadii):
+        res["leadII"] = eval_block(te_leadii, "PTB-XL lead-II")
     if len(te_fuzzy):
         res["fuzzy"] = eval_block(te_fuzzy, "fuzzy derived-lead")
 
