@@ -21,7 +21,7 @@ import label_config as L
 from overlay.scope_overlay import SCOPE_HEADS
 from overlay.inference import L1_HEADS, load_l1
 from scripts.train_scope_overlay import (
-    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, OUT_DIR)
+    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, OUT_DIR, drop_for)
 from scripts.compare_overlay_iterations import probs_for, ANGLE_FILES
 
 def panel(y, p, thr=0.5):
@@ -67,9 +67,10 @@ def eval_set(name, logits, Y, rows):
         if src == "L1*" and mb["n_pos"] > 0:
             dsens = mp["sens"] - mb["sens"]; dspec = mp["spec"] - mb["spec"]
             df1 = mp["f1"] - mb["f1"]
-            ok = "PASS" if (dsens >= -0.05 and dspec > 0) else "FAIL"
+            budget = drop_for(h, 0.05)
+            ok = "PASS" if (dsens >= -budget and dspec > 0) else "FAIL"
             print(f"{'':>7} {'Δ':>7} {'':>7} {dsens:>+7.3f} {dspec:>+7.3f} {'':>15} {df1:>+7.3f}"
-                  f" {'':>15} -> {ok} (Δsens≥-0.05 & Δspec>0; ΔF1 shown)")
+                  f" {'':>15} -> {ok} (Δsens≥-{budget:.2f} & Δspec>0; ΔF1 shown)")
 
 
 def main():

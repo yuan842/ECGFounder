@@ -27,6 +27,7 @@ from overlay.scope_overlay import ScopeProjection, SCOPE_HEADS, DEFAULT_CKPT
 from scripts.train_scope_overlay import (
     load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR)
 from scripts.calibrate_l1_policy import maxf1_threshold, sens_at, ANGLES
+from scripts.train_scope_overlay import drop_for
 
 HEADS = [4, 5, 6]
 MAX_DROP, MARGIN = 0.05, 0.02
@@ -55,7 +56,7 @@ def make_fig(name, probs, Y, taus, base_sens):
     fig, ax = plt.subplots(len(HEADS), 2, figsize=(11, 3.2 * len(HEADS)))
     for r, h in enumerate(HEADS):
         i = SCOPE_HEADS.index(h); y = Y[:, i]; p = probs[:, i]
-        tau = taus[h]; floor = max(0.0, base_sens[h] - MAX_DROP)
+        tau = taus[h]; floor = max(0.0, base_sens[h] - drop_for(h, MAX_DROP))
         f1s, sens, spec = f1_curve(p, y)
         prec, rec, thr = precision_recall_curve(y, p)
         ap = average_precision_score(y, p)
@@ -115,7 +116,7 @@ def main():
     Yv0 = l0[va][:, SCOPE_HEADS]; Yt0 = l0[te][:, SCOPE_HEADS]
     bsl = {h: sens_at(1/(1+np.exp(-f0[va][:, h])), Yv0[:, SCOPE_HEADS.index(h)], 0.5) for h in HEADS}
     tau_ll = {h: maxf1_threshold(p0v[:, SCOPE_HEADS.index(h)], Yv0[:, SCOPE_HEADS.index(h)],
-                                 bsl[h], MAX_DROP, MARGIN)[0] for h in HEADS}
+                                 bsl[h], drop_for(h, MAX_DROP), MARGIN)[0] for h in HEADS}
     # baseline sens on TEST (for the floor line reference shown on the test curve)
     bst_ll = {h: sens_at(1/(1+np.exp(-f0[te][:, h])), Yt0[:, SCOPE_HEADS.index(h)], 0.5) for h in HEADS}
     make_fig("leadII", p0t, Yt0, tau_ll, bst_ll)

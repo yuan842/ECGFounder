@@ -19,7 +19,7 @@ import label_config as L
 from overlay.scope_overlay import ScopeProjection, SCOPE_HEADS, DEFAULT_CKPT
 from overlay.inference import L1_HEADS
 from scripts.train_scope_overlay import (
-    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, POLICY_HEADS)
+    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, POLICY_HEADS, drop_for)
 from scripts.calibrate_l1_policy import maxf1_threshold, sens_at, ANGLES
 from scripts.compare_prod_vs_base_detailed import panel
 from scripts.compare_overlay_iterations import probs_for
@@ -35,7 +35,7 @@ def fit_thresholds(p, b, Y):
         if h not in POLICY_HEADS or Y[:, i].sum() == 0:
             continue
         bs = sens_at(b[:, i], Y[:, i], 0.5)
-        tau, *_ = maxf1_threshold(p[:, i], Y[:, i], bs, MAX_DROP, MARGIN)
+        tau, *_ = maxf1_threshold(p[:, i], Y[:, i], bs, drop_for(h, MAX_DROP), MARGIN)
         thr[h] = tau
     return thr
 

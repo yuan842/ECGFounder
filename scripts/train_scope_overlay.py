@@ -139,13 +139,22 @@ def split_idx(ecg_ids, fm):
 # (Brady/AFib/Tachy). Fit on validation; report PR-AUC and the max-F1 threshold.
 # See res/scope_overlay/L1_TRAINING_POLICY.md.
 POLICY_HEADS = (4, 5, 6)
+# Per-head acceptable sensitivity-loss budget (pp). Currently uniform 5pp for
+# all L1 heads (Brady reverted from 10pp → 5pp 2026-06-01). The map is retained
+# so a head can be given a different budget without code changes. Heads not
+# listed fall back to the --max-sens-drop arg.
+POLICY_MAX_SENS_DROP = {4: 0.05, 5: 0.05, 6: 0.05}
+
+
+def drop_for(h, default=0.05):
+    return POLICY_MAX_SENS_DROP.get(h, default)
 
 
 def fit_policy_thresholds(p_l1_va, base_va, Yva, scope_cols, max_drop, margin=0.02):
-    """Per-head threshold = argmax F1 s.t. sens ≥ base_sens − max_drop (+margin).
+    """Per-head threshold = argmax F1 s.t. sens ≥ base_sens − drop(h) (+margin).
 
-    Returns (thresholds, info) where info rows are
-    (head, base_sens, floor, tau*, sens, spec, f1, pr_auc) at the max-F1 point."""
+    drop(h) is the per-head budget (POLICY_MAX_SENS_DROP), else `max_drop`.
+    Returns (thresholds, info) rows (head, base_sens, floor, tau*, sens, spec, f1, pr_auc)."""
     thr = np.full(len(scope_cols), 0.5, dtype=np.float32)
     info = []
     for i, h in enumerate(scope_cols):
@@ -155,7 +164,7 @@ def fit_policy_thresholds(p_l1_va, base_va, Yva, scope_cols, max_drop, margin=0.
         if npos == 0:
             continue
         base_sens = float(((base_va[:, i] >= 0.5) & (y == 1)).sum() / npos)
-        floor = max(0.0, base_sens - max_drop) + margin
+        floor = max(0.0, base_sens - drop_for(h, max_drop)) + margin
         p = p_l1_va[:, i]
         grid = np.unique(np.concatenate([p, np.linspace(0.01, 0.99, 99)]))
         best = (-1.0, 0.5, 0.0, 0.0)   # f1, tau, sens, spec

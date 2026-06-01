@@ -25,7 +25,7 @@ from device_utils import resolve_device
 import label_config as L
 from overlay.scope_overlay import ScopeProjection, SCOPE_HEADS, DEFAULT_CKPT
 from scripts.train_scope_overlay import (
-    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, POLICY_HEADS)
+    load_ptbxl_leadii, label_lookup, fold_map, fuzzy_logits, FUZZY_DIR, POLICY_HEADS, drop_for)
 
 ANGLES = [45, 60, 75, 90]
 
@@ -95,8 +95,9 @@ def main():
     bf = 1.0 / (1.0 + np.exp(-Lf[:, SCOPE_HEADS]))
 
     thr = l1.decision_threshold.clone().numpy()
-    print(f"Policy: criterion=max-F1, max sens drop {args.max_sens_drop:.0%}, "
-          f"margin {args.margin:.0%}, dist={args.dist}\n")
+    from scripts.train_scope_overlay import POLICY_MAX_SENS_DROP
+    print(f"Policy: criterion=max-F1, per-head sens-drop {POLICY_MAX_SENS_DROP} "
+          f"(default {args.max_sens_drop:.0%}), margin {args.margin:.0%}, dist={args.dist}\n")
     for i, h in enumerate(SCOPE_HEADS):
         if h not in POLICY_HEADS:
             continue
@@ -108,7 +109,7 @@ def main():
                 continue
             base_sens = sens_at(b[:, i], y, 0.5)
             tau, se, sp, f1, pr = maxf1_threshold(
-                p[:, i], y, base_sens, args.max_sens_drop, args.margin)
+                p[:, i], y, base_sens, drop_for(h, args.max_sens_drop), args.margin)
             taus[tag] = (tau, base_sens, se, sp, f1, pr)
         if not taus:
             continue
