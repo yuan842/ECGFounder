@@ -23,7 +23,7 @@ from device_utils import resolve_device
 from overlay.scope_overlay import ScopeProjection, SCOPE_HEADS, NSR_HEAD, DEFAULT_CKPT
 from overlay.signal_quality_gate import SignalQualityGate
 from overlay.types import ScopeScores, Decision, RunAlert
-from overlay.arbiter import arbitrate, to_alerts
+from overlay.arbiter import arbitrate, to_alerts, ArbiterConfig
 
 L1_HEADS: tuple[int, ...] = (4, 5, 6)        # routed through the learned projection
 BASE_HEADS: tuple[int, ...] = (93, 98, 142)  # routed straight from the backbone head
@@ -34,12 +34,14 @@ class ScopedDetector:
 
     def __init__(self, projection_ckpt: str = DEFAULT_CKPT,
                  device=None, sqg: Optional[SignalQualityGate] = None,
+                 arbiter_config: Optional[ArbiterConfig] = None,
                  backbone_ckpt: Optional[str] = None):
         self.device = device or resolve_device()
         self.backbone = load_ecgfounder(self.device, ckpt_path=backbone_ckpt)
         self.backbone.eval()
         self.l1 = load_l1(projection_ckpt, self.device)
-        self.sqg = sqg or SignalQualityGate(enabled=False)   # OFF by default
+        self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
+        self.arbiter_config = arbiter_config or ArbiterConfig()   # L2 OFF by default
 
     @torch.no_grad()
     def score(self, signal: torch.Tensor, *, context: dict | None = None,
@@ -69,11 +71,11 @@ class ScopedDetector:
 
     def detect(self, signal: torch.Tensor, **kw) -> dict[int, Decision] | None:
         ss, _ = self.score(signal, **kw)
-        return None if ss is None else arbitrate(ss)
+        return None if ss is None else arbitrate(ss, self.arbiter_config)
 
     def alerts(self, signal: torch.Tensor, **kw):
         d = self.detect(signal, **kw)
-        return (None, None) if d is None else to_alerts(d)
+        return (None, None) if d is None else to_alerts(d, self.arbiter_config)
 
 
 def load_l1(checkpoint_path: str = DEFAULT_CKPT, device="cpu") -> ScopeProjection:
@@ -91,9 +93,10 @@ if __name__ == "__main__":
     print("ScopeScores:", {h: round(v, 3) for h, v in ss.probs.items()},
           "| nsr=", round(ss.nsr_score, 3))
     print("source     :", {h: ("L1" if h in L1_HEADS else "base") for h in SCOPE_HEADS})
-    decisions = arbitrate(ss)
+    print(f"L2 enabled : {det.arbiter_config.enabled}  (default OFF)")
+    decisions = det.detect(x, context={"hr_bpm": 48.0})
     for h, d in decisions.items():
         print(f"  head {h:>3} {L.DETECTION_SCOPE[h]:<28} fired={d.fired!s:<5} {d.reason}")
-    non_run, run = to_alerts(decisions)
+    non_run, run = det.alerts(x, context={"hr_bpm": 48.0})
     print("alerts     :", [(L.DETECTION_SCOPE[d.head], round(d.score, 2)) for d in non_run],
           "| run:", run)

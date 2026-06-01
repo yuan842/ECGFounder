@@ -91,6 +91,8 @@ raw ECG (10 s, lead II)
 
 ## 4. L2 — deterministic rule arbiter
 
+**Configurable; DEFAULT OFF (2026-06-01).** `arbitrate(s, config)` / `to_alerts(d, config)` take an `ArbiterConfig` whose master switch `enabled` defaults False. When OFF, L2 is pure pass-through (candidate firings at `fire_threshold` flow through unchanged — no suppression, no merge); each rule (`nsr_contradiction`, `afib_over_tachy`, `mutual_exclusion`, `hr_plausibility`, `merge_runs`) and threshold is independently togglable when enabled. `ScopedDetector` defaults to L2 OFF. Kept OFF for now.
+
 **Contract.** Input = `{6 calibrated probs, nsr_score (head 1), context (hr_bpm, rr_irregularity), optional quality flags}`. Output = 6 `Decision{fired, score, reason}`. Pure function, no weights, unit-tested; thresholds are versioned constants. **Suppress / merge only — never promotes.**
 
 **Rule pipeline — strict precedence** (signal-quality stage REMOVED — handled by SQG):

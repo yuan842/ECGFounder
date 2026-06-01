@@ -15,7 +15,7 @@ These are SKELETONS with the recommended defaults wired in:
 """
 from overlay.types import ScopeScores, Decision, RunAlert
 from overlay.signal_quality_gate import SignalQualityGate, GateResult
-from overlay.arbiter import arbitrate, to_alerts, SCOPE_HEADS
+from overlay.arbiter import arbitrate, to_alerts, SCOPE_HEADS, ArbiterConfig, DEFAULT_CONFIG
 
 # inference (backbone→L1→L2) pulls in torch + checkpoints; import lazily so the
 # lightweight pieces above stay importable without loading the backbone.
@@ -28,6 +28,6 @@ def __getattr__(name):  # PEP 562
 __all__ = [
     "ScopeScores", "Decision", "RunAlert",
     "SignalQualityGate", "GateResult",
-    "arbitrate", "to_alerts", "SCOPE_HEADS",
+    "arbitrate", "to_alerts", "SCOPE_HEADS", "ArbiterConfig", "DEFAULT_CONFIG",
     "ScopedDetector", "L1_HEADS", "BASE_HEADS", "load_l1",
 ]
