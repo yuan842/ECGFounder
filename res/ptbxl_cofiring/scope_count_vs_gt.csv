@@ -1,0 +1,7 @@
+head,name,n_gt,n_main,n_cofire,n_total_fired,total/gt,n_tp,recall,n_fp,comment
+4,SINUS BRADYCARDIA,637,3663,82,3745,5.879,618,0.97,3127,over-counts GT >2x
+5,ATRIAL FIBRILLATION,1514,1911,224,2135,1.41,1477,0.976,658,roughly matches GT count
+6,SINUS TACHYCARDIA,826,2126,402,2528,3.061,810,0.981,1718,over-counts GT >2x
+93,SUPRAVENTRICULAR TACHYCARDIA,42,4,51,55,1.31,24,0.571,31,roughly matches GT count
+98,VENTRICULAR TACHYCARDIA,42,2,69,71,1.69,27,0.643,44,roughly matches GT count
+142,WITH SINUS PAUSE,0,0,0,0,inf,0,nan,0,GT has 0 — any firing is FP
