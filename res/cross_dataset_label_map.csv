@@ -1,0 +1,151 @@
+idx,head_name,in_scope,challenge2017,cinc2015,ecg_tp_fzark,ecg_fp_fzark,mimic,mitdb,move,ptbxl_active
+0,ABNORMAL ECG,,,,,,,,,
+1,NORMAL SINUS RHYTHM,,,,,,,default-normal,,
+2,NORMAL ECG,yes,N (normal),,Normal ECG,Normal ECG,,default-normal,,yes
+3,SINUS RHYTHM,,,,,,,,,yes
+4,SINUS BRADYCARDIA,yes,,alarm:bradycardia,Bradycardia,Bradycardia,sinus bradycardia; marked sinus bradycardia; bradycardia,rhythm:(SBR,,yes
+5,ATRIAL FIBRILLATION,yes,A (atrial fibrillation),,Atrial Fibrillation,Atrial Fibrillation,atrial fibrillation; atrial fib; afib; a-fib,rhythm:(AFIB,,yes
+6,SINUS TACHYCARDIA,yes,,alarm:tachycardia,Sinus Tachycardia,Sinus Tachycardia,sinus tachycardia; sinus tach,,,yes
+7,otherwise normal ecg,,,,,,,,,
+8,LEFT AXIS DEVIATION,,,,,,,,,
+9,PREMATURE VENTRICULAR COMPLEXES,,,,Isolated Ventricular Beat; Ventricular Couplet,Isolated Ventricular Beat; Ventricular Couplet,premature ventricular complex; premature ventricular contraction; ventricular ectopic; ventricular premature; pvc; ventricular bigeminy; ventricular trigeminy; ventricular couplet,beat:V,,yes
+10,BORDERLINE ECG,,,,,,,,,
+11,RIGHT BUNDLE BRANCH BLOCK,,,,,,,beat:R,,yes
+12,SEPTAL INFARCT,,,,,,,,,yes
+13,LEFT ATRIAL ENLARGEMENT,,,,,,,,,yes
+14,NONSPECIFIC T WAVE ABNORMALITY,,,,,,,,,
+15,LOW VOLTAGE QRS,,,,,,,,,yes
+16,PREMATURE ATRIAL COMPLEXES,,,,Isolated Supraventricular Beat; Supraventricular Bigeminy; Supraventricular Trigeminy,Isolated Supraventricular Beat; Supraventricular Bigeminy; Supraventricular Trigeminy,premature atrial complex; premature atrial contraction; atrial premature; atrial ectopic; atrial bigeminy; atrial trigeminy; pac,beat:A; beat:a,,
+17,ANTERIOR INFARCT,,,,,,,,,yes
+18,INCOMPLETE RIGHT BUNDLE BRANCH BLOCK,,,,,,,,,
+19,PREMATURE SUPRAVENTRICULAR COMPLEXES,,,,Supraventricular Couplet,Supraventricular Couplet,premature supraventricular complex; supraventricular premature; supraventricular ectopic; supraventricular couplet; psvc,beat:S; beat:j,,
+20,LEFT BUNDLE BRANCH BLOCK,,,,,,,beat:L,,yes
+21,NONSPECIFIC T WAVE ABNORMALITY NOW EVIDENT IN,,,,,,,,,
+22,NONSPECIFIC T WAVE ABNORMALITY NO LONGER EVIDENT IN,,,,,,,,,
+23,T WAVE INVERSION NOW EVIDENT IN,,,,,,,,,
+24,LATERAL INFARCT,,,,,,,,,yes
+25,NONSPECIFIC ST ABNORMALITY,,,,,,,,,
+26,LEFT VENTRICULAR HYPERTROPHY,,,,,,,,,yes
+27,T WAVE INVERSION NO LONGER EVIDENT IN,,,,,,,,,
+28,WITH RAPID VENTRICULAR RESPONSE,,,,,,,,,
+29,QT HAS SHORTENED,,,,,,,,,
+30,QT HAS LENGTHENED,,,,,,,,,yes
+31,FUSION COMPLEXES,,,,,,,,,
+32,ATRIAL FLUTTER,,,,,,,rhythm:(AFL,,yes
+33,MARKED SINUS BRADYCARDIA,,,,,,,,,
+34,WITH SINUS ARRHYTHMIA,,,,,,,,,
+35,NONSPECIFIC ST AND T WAVE ABNORMALITY,,,,,,,,,
+36,LEFT ANTERIOR FASCICULAR BLOCK,,,,,,,,,yes
+37,RIGHT AXIS DEVIATION,,,,,,,,,
+38,ECTOPIC ATRIAL RHYTHM,,,,,,,,,
+39,UNDETERMINED RHYTHM,,,,,,,,,
+40,ANTEROSEPTAL INFARCT,,,,,,,,,yes
+41,RIGHTWARD AXIS,,,,,,,,,
+42,ST NOW DEPRESSED IN,,,,,,,,,
+43,WITH SHORT PR,,,,,,,,,
+44,WITH MARKED SINUS ARRHYTHMIA,,,,,,,,,
+45,ST NO LONGER DEPRESSED IN,,,,,,,,,
+46,INVERTED T WAVES HAVE REPLACED NONSPECIFIC T WAVE ABNORMALITY IN,,,,,,,,,
+47,NON-SPECIFIC CHANGE IN ST SEGMENT IN,,,,,,,,,
+48,NONSPECIFIC T WAVE ABNORMALITY HAS REPLACED INVERTED T WAVES IN,,,,,,,,,
+49,JUNCTIONAL RHYTHM,,,,,,,,,
+50,ELECTRONIC ATRIAL PACEMAKER,,,,,,,,,yes
+51,ABERRANT CONDUCTION,,,,,,,,,
+52,ELECTRONIC VENTRICULAR PACEMAKER,,,,,,,,,
+53,T WAVE INVERSION LESS EVIDENT IN,,,,,,,,,
+54,ANTEROLATERAL INFARCT,,,,,,,,,yes
+55,WITH REPOLARIZATION ABNORMALITY,,,,,,,,,
+56,RSR' OR QR PATTERN IN V1 SUGGESTS RIGHT VENTRICULAR CONDUCTION DELAY,,,,,,,,,
+57,T WAVE INVERSION MORE EVIDENT IN,,,,,,,,,
+58,WIDE QRS RHYTHM,,,,,,,,,
+59,WITH PREMATURE VENTRICULAR OR ABERRANTLY CONDUCTED COMPLEXES,,,,,,,,,
+60,RIGHT ATRIAL ENLARGEMENT,,,,,,,,,yes
+61,INFERIOR INFARCT,,,,,,,,,yes
+62,INCOMPLETE LEFT BUNDLE BRANCH BLOCK,,,,,,,,,
+63,VOLTAGE CRITERIA FOR LEFT VENTRICULAR HYPERTROPHY,,,,,,,,,
+64,OR DIGITALIS EFFECT,,,,,,,,,
+65,BIFASCICULAR BLOCK,,,,,,,,,
+66,ST NO LONGER ELEVATED IN,,,,,,,,,
+67,WITH SLOW VENTRICULAR RESPONSE,,,,,,,,,
+68,ST ELEVATION NOW PRESENT IN,,,,ST Elevation,ST Elevation,,,,
+69,PREMATURE ECTOPIC COMPLEXES,,,,,,,,,
+70,LEFT POSTERIOR FASCICULAR BLOCK,,,,,,,,,yes
+71,T WAVE AMPLITUDE HAS DECREASED IN,,,,,,,,,
+72,WITH A COMPETING JUNCTIONAL PACEMAKER,,,,,,,,,
+73,RIGHT SUPERIOR AXIS DEVIATION,,,,,,,,,
+74,BIATRIAL ENLARGEMENT,,,,,,,,,
+75,VENTRICULAR-PACED RHYTHM,,,,,,,,,
+76,ATRIAL-PACED RHYTHM,,,,,,,,,
+77,T WAVE AMPLITUDE HAS INCREASED IN,,,,,,,,,
+78,WITH QRS WIDENING,,,,,,,,,yes
+79,WITH 1ST DEGREE AV BLOCK,,,,,,,,,yes
+80,PROLONGED QT,,,,,,,,,
+81,WITH PROLONGED AV CONDUCTION,,,,,,,,,
+82,RIGHT VENTRICULAR HYPERTROPHY,,,,,,,,,yes
+83,WITH QRS WIDENING AND REPOLARIZATION ABNORMALITY,,,,,,,,,
+84,ATRIAL-SENSED VENTRICULAR-PACED RHYTHM,,,,,,,,,
+85,AV SEQUENTIAL OR DUAL CHAMBER ELECTRONIC PACEMAKER,,,,,,,,,
+86,PULMONARY DISEASE PATTERN,,,,,,,,,
+87,ACUTE MI / STEMI,,,,,,,,,
+88,INFERIOR-POSTERIOR INFARCT,,,,,,,,,
+89,NONSPECIFIC INTRAVENTRICULAR CONDUCTION DELAY,,,,,,,,,
+90,PREMATURE VENTRICULAR AND FUSION COMPLEXES,,,,,,,,,
+91,IN A PATTERN OF BIGEMINY,,,,,,,,,
+92,AV DUAL-PACED RHYTHM,,,,,,,,,
+93,SUPRAVENTRICULAR TACHYCARDIA,yes,,,Supraventricular Run,Supraventricular Run,supraventricular tachycardia; svt; atrioventricular nodal reentrant tachycardia; avnrt; atrioventricular reentrant tachycardia; avrt,rhythm:(SVTA,,yes
+94,VENTRICULAR-PACED COMPLEXES,,,,,,,,,
+95,WIDE QRS TACHYCARDIA,,,,,,,,,
+96,RSR' PATTERN IN V1,,,,,,,,,
+97,ST LESS DEPRESSED IN,,,,,,,,,
+98,VENTRICULAR TACHYCARDIA,yes,,alarm:ventricular_tachycardia; alarm:vtach,Ventricular Run,Ventricular Run,ventricular tachycardia; v-tach; vt ; nonsustained ventricular tachycardia; nsvt; vent tachycardia,rhythm:(VT,,yes
+99,EARLY REPOLARIZATION,,,,,,,,,
+100,ST MORE DEPRESSED IN,,,,,,,,,
+101,ANTEROLATERAL LEADS,,,,,,,,,yes
+102,ELECTRONIC DEMAND PACING,,,,,,,,,
+103,RBBB AND LEFT ANTERIOR FASCICULAR BLOCK,,,,,,,,,
+104,LATERAL INJURY PATTERN,,,,,,,,,
+105,BIVENTRICULAR PACEMAKER DETECTED,,,,,,,,,
+106,SUSPECT UNSPECIFIED PACEMAKER FAILURE,,,,,,,,,
+107,WOLFF-PARKINSON-WHITE,,,,,,,,,yes
+108,WITH VENTRICULAR ESCAPE COMPLEXES,,,,,,,,,
+109,INFERIOR INJURY PATTERN,,,,,,,,,
+110,CONSIDER RIGHT VENTRICULAR INVOLVEMENT IN ACUTE INFERIOR INFARCT,,,,,,,,,
+111,ST ELEVATION HAS REPLACED ST DEPRESSION IN,,,,,,,,,
+112,NONSPECIFIC INTRAVENTRICULAR BLOCK,,,,,,,,,yes
+113,MASKED BY FASCICULAR BLOCK,,,,,,,,,
+114,PEDIATRIC ECG ANALYSIS,,,,,,,,,
+115,BLOCKED,,,,,,,,,
+116,WITH UNDETERMINED RHYTHM IRREGULARITY,,,,,,,,,
+117,LEFTWARD AXIS,,,,,,,,,
+118,WITH 2ND DEGREE SA BLOCK MOBITZ I,,,,,,,,,
+119,ACUTE,,,,,,,,,
+120,ABNORMAL LEFT AXIS DEVIATION,,,,,,,,,
+121,WITH COMPLETE HEART BLOCK,,,,,,,,,
+122,NO P-WAVES FOUND,,,,,,,,,
+123,ST LESS ELEVATED IN,,,,,,,,,
+124,WITH RETROGRADE CONDUCTION,,,,,,,,,
+125,ST MORE ELEVATED IN,,,,,,,,,
+126,JUNCTIONAL BRADYCARDIA,,,,,,,,,
+127,WITH VARIABLE AV BLOCK,,,,,,,,,
+128,ANTERIOR INJURY PATTERN,,,,,,,,,
+129,WITH JUNCTIONAL ESCAPE COMPLEXES,,,,,,,,,
+130,ACUTE MI,,,,,,,,,
+131,ACUTE PERICARDITIS,,,,,,,,,
+132,POSTERIOR INFARCT,,,,,,,,,
+133,IDIOVENTRICULAR RHYTHM,,,,,,,,,
+134,WITH 2ND DEGREE SA BLOCK MOBITZ II,,,,,,,,,
+135,R IN AVL,,,,,,,,,
+136,SINUS/ATRIAL CAPTURE,,,,,,,,,
+137,AV DUAL-PACED COMPLEXES,,,,,,,,,
+138,INFEROLATERAL INJURY PATTERN,,,,,,,,,
+139,RBBB AND LEFT POSTERIOR FASCICULAR BLOCK,,,,,,,,,
+140,ANTEROLATERAL INJURY PATTERN,,,,,,,,,
+141,ATRIAL-PACED COMPLEXES,,,,,,,,,
+142,WITH SINUS PAUSE,yes,,alarm:asystole,Pause,Pause,sinus pause; sinoatrial pause; sinus arrest; asystole,,,
+143,BIVENTRICULAR HYPERTROPHY,,,,,,,,,
+144,ABNORMAL RIGHT AXIS DEVIATION,,,,,,,,,
+145,SUPRAVENTRICULAR COMPLEXES,,,,,,,,,
+146,WITH 2ND DEGREE AV BLOCK MOBITZ I,,,,,,,,,
+147,WITH 2:1 AV CONDUCTION,,,,,,,,,
+148,WITH AV DISSOCIATION,,,,,,,,,
+149,MULTIFOCAL ATRIAL TACHYCARDIA,,,,,,,,,

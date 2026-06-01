@@ -173,7 +173,74 @@ This is the **6-head core** — the natural scope for any fine-tune that wants p
 
 ---
 
-## 6. Helper API
+## 6. CINC2015 + MIMIC routings (per-script mappers)
+
+These two datasets carry their own label-routing modules under `scripts/` because they use **non-fzark** native vocabularies (ICU alarm tokens, MUSE free-text). Both modules import head names from `label_config.load_tasks()` — local hard-coded copies were removed (2026-05-31). They are reproduced here so the §0 hard rule and §1 fzark routes are all in one place.
+
+### 6.1 CINC2015 — alarm token → Founder idx
+
+[scripts/cinc2015/cinc2015_label_map.py](../scripts/cinc2015/cinc2015_label_map.py) `ALARM_TO_HEAD`:
+
+| Alarm token (lowercased substring) | Founder idx | Head | Notes |
+|---|---:|---|---|
+| `asystole` | 142 | WITH SINUS PAUSE | Asystole >2 s as Pause proxy — clinical meaning matches, head's tasks.txt phrase is a sentence fragment. |
+| `ventricular_flutter`, `ventricular_fib` | **None** | — | Explicitly out of scope (distinct from VT, left unmapped). |
+| `ventricular_tachycardia`, `vtach` | 98 | VENTRICULAR TACHYCARDIA | Exact. |
+| `bradycardia` | 4 | SINUS BRADYCARDIA | Extreme ICU brady. |
+| `tachycardia` | 6 | SINUS TACHYCARDIA | ⚠ **Loose** — ICU extreme tachy is rate-only and may be SVT/AT/AF-with-RVR, not necessarily sinus. Documented relaxation. |
+
+**True/false verdict semantic** (`labels_from_alarm`): a TRUE alarm of type T sets `vec[head(T)] = 1`. A FALSE alarm of type T yields the **all-zero vector** — a hard negative for that head. Out-of-scope alarm types return `None` and the record is skipped.
+
+### 6.2 MIMIC-IV-ECG — free-text substring → Founder idx
+
+[scripts/mimic/mimic_label_map.py](../scripts/mimic/mimic_label_map.py) `HEAD_SPEC`. The 9 target heads (V3.1 single-head ontology minus ST Elevation, which has insufficient MIMIC text):
+
+| Founder idx | Head | Example trigger substrings |
+|---:|---|---|
+| 4 | SINUS BRADYCARDIA | `sinus bradycardia`, `marked sinus bradycardia`, `bradycardia` |
+| 5 | ATRIAL FIBRILLATION | `atrial fibrillation`, `atrial fib`, `afib`, `a-fib` |
+| 6 | SINUS TACHYCARDIA | `sinus tachycardia`, `sinus tach` |
+| 9 | PREMATURE VENTRICULAR COMPLEXES | `premature ventricular complex/contraction`, `pvc`, `ventricular ectopic/premature/bigeminy/trigeminy/couplet` |
+| 16 | PREMATURE ATRIAL COMPLEXES | `premature atrial complex/contraction`, `atrial premature/ectopic/bigeminy/trigeminy`, `pac` |
+| 19 | PREMATURE SUPRAVENTRICULAR COMPLEXES | `premature supraventricular complex`, `supraventricular premature/ectopic/couplet`, `psvc` |
+| 93 | SUPRAVENTRICULAR TACHYCARDIA | `supraventricular tachycardia`, `svt`, `avnrt`, `avrt` |
+| 98 | VENTRICULAR TACHYCARDIA | `ventricular tachycardia`, `v-tach`, `vt `, `nsvt`, `nonsustained ventricular tachycardia` |
+| 142 | WITH SINUS PAUSE | `sinus pause`, `sinoatrial pause`, `sinus arrest`, `asystole` |
+
+**Specificity guard** (`_SUPRA_RE`): "ventricular X" is a literal substring of "supraventricular X", so for V-pattern heads (9, 98) the text is masked first — `supra(?:[\-\s]?ventricular)` → `supravent_` — before substring checks. SV-pattern heads (16, 19, 93) run on the original text. Order within `HEAD_SPEC` is fixed (specific phrases first), but the mask is what actually prevents `supraventricular tachycardia` from firing head 98.
+
+### 6.3 Both routings cover the 7-head detection scope
+
+CINC2015 hits 4 of 7 scope heads (4, 6, 98, 142). MIMIC hits all 7 (5, 4, 6, 93, 98, 142 explicitly; head 2 / Normal ECG implicitly — see §7.2).
+
+---
+
+## 7. Datasets without a 150-header mapping (by design)
+
+### 7.1 MOVE (VivaLink wearable)
+
+No rhythm ground truth — MOVE is recorded with activity tags (`walk`, `run`, `sleep`, `sit`) on a rhythm-negative subject pool. There is no native-label → Founder-idx mapping module and there should not be one. Evaluation is **FP-behavior only**: the model emits predictions, the v2 FP-suppression filter gates them by motion/SQI, and reporting compares pre- vs post-gate alert volumes ([scripts/move/eval_move_fp.py](../scripts/move/eval_move_fp.py), [report_recording.py](../report_recording.py)).
+
+### 7.2 Challenge 2017 (cinc17)
+
+Native labels (`N`/`A`/`O`/`~`) are referenced **only** by the Stanford 1D-ResNet baseline ([stanford/examples/cinc17/](../stanford/examples/cinc17/)), which is retrained 4-class — not mapped into the 150-head space. If ECGFounder evaluation on cinc17 is ever required, the trivial routing is:
+
+| cinc17 class | Founder idx | Head |
+|---|---:|---|
+| `A` | 5 | ATRIAL FIBRILLATION |
+| `N` | 2 | NORMAL ECG |
+| `O` | — | (no positive — multi-class "other") |
+| `~` | — | (noise — record skipped) |
+
+No mapper module exists for this; add `scripts/challenge2017/cinc17_label_map.py` if/when needed.
+
+### 7.3 Normal-ECG (head 2) coverage caveat
+
+Head 2 is set **explicitly** only in PTB-XL (positive label in `csv/ptbxl_label.csv`) and MIT-BIH (default-on when no AFib + no abnormal beats, see §4.3). CINC2015, MIMIC, and ecg_fp produce **implicit** zeros at head 2 (false alarms / no-match text → all-zero label vector). Consequence: Normal-ECG metrics are only meaningful on PTB-XL and MIT-BIH; the other datasets cannot score head 2.
+
+---
+
+## 8. Helper API
 
 From [label_config.py](../label_config.py):
 
@@ -214,7 +281,7 @@ detect(probs, "Atrial Fibrillation", threshold=0.5)   # True / False / None
 
 ---
 
-## 7. Glossary of supporting code locations
+## 9. Glossary of supporting code locations
 
 | Concern | File |
 |---|---|
@@ -230,7 +297,7 @@ detect(probs, "Atrial Fibrillation", threshold=0.5)   # True / False / None
 
 ---
 
-## 8. Archived documents
+## 10. Archived documents
 
 Historical strategy / planning / experimental documents have been moved to [res/_archived/](_archived/). They include the v3 reclassification plan, the off-by-one bug report, two iterations of fine-tune strategy, the vanilla and masked-loss fuzzylead2 training reports, and similar materials. **They are kept for historical reference only and are not consulted for current behavior** — this document is the sole guide.
 

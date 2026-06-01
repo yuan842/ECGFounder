@@ -21,8 +21,13 @@ CAVEATS (verify against the real headers with --report-unmapped):
 """
 from __future__ import annotations
 
-HEAD_NAMES = {4: "SINUS BRADYCARDIA", 6: "SINUS TACHYCARDIA",
-              98: "VENTRICULAR TACHYCARDIA", 142: "WITH SINUS PAUSE"}
+# Canonical head names sourced from tasks.txt (via label_config) — single source
+# of truth. Adding a head here is a one-line change: extend the tuple.
+from label_config import load_tasks as _load_tasks
+
+_TASKS: list[str] = _load_tasks()
+_CINC2015_HEADS: tuple[int, ...] = (4, 6, 98, 142)
+HEAD_NAMES: dict[int, str] = {idx: _TASKS[idx] for idx in _CINC2015_HEADS}
 
 # alarm-type token (lowercased, substring match) → founder head index.
 # Order matters: check 'ventricular' tokens before generic 'tachycardia'.

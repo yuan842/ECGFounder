@@ -29,28 +29,32 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
-# (idx, canonical_head_name, [list of lowercase substrings that signal a positive])
-HEAD_SPEC: list[tuple[int, str, list[str]]] = [
+# Canonical head names sourced from tasks.txt (via label_config) — single source
+# of truth. HEAD_SPEC stores only (idx, substrings); HEAD_NAMES is derived.
+from label_config import load_tasks as _load_tasks
+
+# (idx, [list of lowercase substrings that signal a positive])
+HEAD_SPEC: list[tuple[int, list[str]]] = [
     # idx 4  — SINUS BRADYCARDIA
-    (4, "SINUS BRADYCARDIA", [
+    (4, [
         "sinus bradycardia",
         "marked sinus bradycardia",
         "bradycardia",        # broad fallback
     ]),
     # idx 5  — ATRIAL FIBRILLATION
-    (5, "ATRIAL FIBRILLATION", [
+    (5, [
         "atrial fibrillation",
         "atrial fib",
         "afib",
         "a-fib",
     ]),
     # idx 6  — SINUS TACHYCARDIA
-    (6, "SINUS TACHYCARDIA", [
+    (6, [
         "sinus tachycardia",
         "sinus tach",
     ]),
     # idx 9  — PREMATURE VENTRICULAR COMPLEXES
-    (9, "PREMATURE VENTRICULAR COMPLEXES", [
+    (9, [
         "premature ventricular complex",     # PVC
         "premature ventricular contraction",
         "ventricular ectopic",
@@ -61,7 +65,7 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
         "ventricular couplet",
     ]),
     # idx 16 — PREMATURE ATRIAL COMPLEXES
-    (16, "PREMATURE ATRIAL COMPLEXES", [
+    (16, [
         "premature atrial complex",
         "premature atrial contraction",
         "atrial premature",
@@ -71,7 +75,7 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
         "pac",
     ]),
     # idx 19 — PREMATURE SUPRAVENTRICULAR COMPLEXES
-    (19, "PREMATURE SUPRAVENTRICULAR COMPLEXES", [
+    (19, [
         "premature supraventricular complex",
         "supraventricular premature",
         "supraventricular ectopic",
@@ -79,7 +83,7 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
         "psvc",
     ]),
     # idx 93 — SUPRAVENTRICULAR TACHYCARDIA  (matched BEFORE generic "tachycardia")
-    (93, "SUPRAVENTRICULAR TACHYCARDIA", [
+    (93, [
         "supraventricular tachycardia",
         "svt",
         "atrioventricular nodal reentrant tachycardia",
@@ -88,7 +92,7 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
         "avrt",
     ]),
     # idx 98 — VENTRICULAR TACHYCARDIA   (matched BEFORE generic "tachycardia")
-    (98, "VENTRICULAR TACHYCARDIA", [
+    (98, [
         "ventricular tachycardia",
         "v-tach",
         "vt ",
@@ -97,7 +101,7 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
         "vent tachycardia",
     ]),
     # idx 142 — WITH SINUS PAUSE
-    (142, "WITH SINUS PAUSE", [
+    (142, [
         "sinus pause",
         "sinoatrial pause",
         "sinus arrest",
@@ -105,9 +109,10 @@ HEAD_SPEC: list[tuple[int, str, list[str]]] = [
     ]),
 ]
 
+_TASKS: list[str] = _load_tasks()
 # Head indices in canonical order (must match the column order of the labels matrix).
 HEAD_IDX: list[int] = [h[0] for h in HEAD_SPEC]
-HEAD_NAMES: list[str] = [h[1] for h in HEAD_SPEC]
+HEAD_NAMES: list[str] = [_TASKS[idx] for idx in HEAD_IDX]
 
 
 _SUPRA_RE = re.compile(r"\bsupra(?:[\-\s]?ventricular)\b", re.IGNORECASE)
@@ -134,7 +139,7 @@ def label_from_text(text: str) -> tuple[int, ...]:
 
     hit = []
     V_HEADS = {9, 98}  # use the masked text for these
-    for idx, _name, kws in HEAD_SPEC:
+    for idx, kws in HEAD_SPEC:
         target = norm_v_safe if idx in V_HEADS else norm
         for kw in kws:
             if kw in target:
