@@ -8,13 +8,14 @@
 > never tuned on. Source of truth `csv/ptbxl_fold_split.csv` + `ptbxl_splits.py` (integrity asserted
 > at import). Base-model eval may use all records; fine-tuned models must respect the split.
 >
-> ⛔ **GLOBAL HARD RULE (2026-05-29): detection scope = 7 labels (6 events + Normal ECG).** The
+> ⛔ **GLOBAL HARD RULE (2026-06-01): detection scope = 6 fzark events.** The
 > system detects only **Atrial Fibrillation (5), Bradycardia (4), Sinus Tachycardia (6),
-> Supraventricular Run (93), Ventricular Run (98), Pause (142), Normal ECG (2).** Source of truth =
-> `label_config.SCOPE_EVENT_TO_HEAD` / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an import-time
-> assertion (Normal ECG is a backbone head, exempt from the fzark check). Anything else is out of
-> scope everywhere (detect → None, FP suppressor passes through, eval scripts skip). See
-> `res/GLOBAL_LABEL_MAP.md` § hard rule.
+> Supraventricular Run (93), Ventricular Run (98), Pause (142).**
+> Source of truth = `label_config.SCOPE_EVENT_TO_HEAD` / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an
+> import-time assertion. **NORMAL SINUS RHYTHM (1) and NORMAL ECG (2) were removed from scope 2026-06-01**
+> (head 1 had 0 PTB-XL GT / 100% FP; head 2 always subsumed by head 1) — both remain label-MAPPING targets
+> only. Anything out of scope is inert everywhere (detect → None, FP suppressor passes through, eval scripts
+> skip). See `res/GLOBAL_LABEL_MAP.md` § hard rule.
 
 ---
 

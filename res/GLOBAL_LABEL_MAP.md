@@ -7,9 +7,9 @@
 
 ---
 
-## ⛔ GLOBAL HARD RULE — detection scope = 7 labels (6 events + Normal ECG)
+## ⛔ GLOBAL HARD RULE — detection scope = 6 fzark events
 
-The system detects **EXACTLY these 7 labels — nothing else is a valid detection target, anywhere:**
+The system detects **EXACTLY these 6 labels — nothing else is a valid detection target, anywhere:**
 
 | label | head | tasks.txt head label | threshold |
 |---|---|---|---|
@@ -19,14 +19,13 @@ The system detects **EXACTLY these 7 labels — nothing else is a valid detectio
 | Supraventricular Run | 93 | SUPRAVENTRICULAR TACHYCARDIA | 0.5 |
 | Ventricular Run | 98 | VENTRICULAR TACHYCARDIA | 0.5 |
 | Pause | 142 | WITH SINUS PAUSE | 0.5 |
-| **Normal ECG** | **2** | **NORMAL ECG** | **0.5** |
 
-> **Normal ECG (2026-05-29)** is a backbone head (the "normal" reference, 43.6% of PTB-XL), **not a fzark arrhythmia event** — it is in `SCOPE_EVENT_TO_HEAD`/`DETECTION_SCOPE` but **not** in `FZARK_LABEL_MAP`, and is exempt from the fzark-consistency check.
+> **NORMAL SINUS RHYTHM (1) and NORMAL ECG (2) were REMOVED from scope 2026-06-01.** They are normal-state backbone heads, not detection targets: on PTB-XL head 1 had 0 GT (100% FP, it fires on ~80% of records) and head 2 was always subsumed by head 1. They remain valid label-MAPPING targets (head 2 is still a first-class `FZARK_ONTOLOGY` entry) but `detect()`/`detect_index()` now return `None` for both. `NON_FZARK_SCOPE_EVENTS` is consequently empty; all 6 scope events are fzark arrhythmia events.
 > **All 7 heads use the 0.5 default.** The earlier noise-floor overrides (93→0.040, 142→0.006) were reverted — fragile/device-specific. Consequence: at single-lead, heads 93/98/142 stay effectively silent (0% sensitivity); detecting SV-Run/V-Run/Pause needs the fine-tuned head, not a low threshold.
 
 - **Source of truth**: `label_config.SCOPE_EVENT_TO_HEAD` (label→head) / `SCOPE_EVENTS` / `DETECTION_SCOPE`, enforced by an **import-time assertion** (`_assert_scope_consistency`) — the module fails to import if the scope ever drifts.
 - `detect()` / `detect_index()` return `None` (out-of-scope, *not* a false negative) for any other head; the FP suppressor passes out-of-scope events through; eval scripts iterate `scope_indices()` only.
-- The full `FZARK_ONTOLOGY` (now **14 labels** — 13 events + **Normal ECG**, head 2) is retained for label MAPPING — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 7 labels above. (Normal ECG was added to the fzark classification system 2026-05-29; it is a state, not an arrhythmia event, so it has no empirical PPV / reliability.)
+- The full `FZARK_ONTOLOGY` (now **14 labels** — 13 events + **Normal ECG**, head 2) is retained for label MAPPING — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 6 labels above. (Normal ECG remains a first-class `FZARK_ONTOLOGY` mapping entry but, like Normal Sinus Rhythm, is **no longer a detection target** as of 2026-06-01 — both are normal-state labels, not arrhythmia events, so they have no empirical PPV / reliability.)
 - To change the scope: edit `SCOPE_EVENT_TO_HEAD` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
 
 ---
@@ -36,6 +35,8 @@ The system detects **EXACTLY these 7 labels — nothing else is a valid detectio
 `model(x)` returns `(batch, 150)` raw logits from a single `nn.Linear(1024, 150)` head. No softmax, no sigmoid, no internal classification — this is a **multi-label** classifier. Callers apply `torch.sigmoid` externally to obtain 150 independent probabilities, each in [0, 1] with no sum-to-one constraint. A single record routinely fires multiple heads simultaneously (mean ≈ 8 heads at t=0.5 on fzark TPs).
 
 All clinical interpretation — which head means what, which dataset's events map where, how to combine multi-head outputs, when to suppress — lives in `label_config.py` and the downstream filters. Not in the model weights.
+
+**Virtual signal-state labels (idx 150, 151).** The project's label vocabulary extends two indices beyond the model's 150 heads — `150 = Noisy`, `151 = High Motion` — populated by the QC / FP-suppression layer (HF-noise ratio and accelerometer `mean_motion`), not by `model(x)`. They are listed in `SIGNAL_STATE_LABELS` in [label_config.py](../label_config.py) and appear in the cross-dataset label map ([CROSS_DATASET_LABEL_MAP.md](CROSS_DATASET_LABEL_MAP.md) §5.11) so that every label index has one canonical home. They are NOT in `DETECTION_SCOPE` and are out-of-range for `tasks.txt` — indexing the model output at 150/151 will fail by design.
 
 ---
 
@@ -211,7 +212,7 @@ These two datasets carry their own label-routing modules under `scripts/` becaus
 
 ### 6.3 Both routings cover the 7-head detection scope
 
-CINC2015 hits 4 of 7 scope heads (4, 6, 98, 142). MIMIC hits all 7 (5, 4, 6, 93, 98, 142 explicitly; head 2 / Normal ECG implicitly — see §7.2).
+CINC2015 hits 4 of 6 scope heads (4, 6, 98, 142). MIMIC hits all 6 (4, 5, 6, 93, 98, 142). (NORMAL ECG / NORMAL SINUS RHYTHM are no longer scope heads as of 2026-06-01.)
 
 ---
 
@@ -273,7 +274,7 @@ detect(probs, "Atrial Fibrillation", threshold=0.5)   # True / False / None
 
 - `tasks.txt` SHA256 pinned to canonical hash; mismatch raises.
 - The ontology commits to exactly **14 supported labels** (13 v3.1 events + Normal ECG) mapping to 11 unique heads.
-- The 7-label detection-scope hard rule is asserted at import (`_assert_scope_consistency`).
+- The 6-label detection-scope hard rule is asserted at import (`_assert_scope_consistency`).
 - Every mapped index is `0 ≤ idx < 150` and lookup returns a head whose name contains the expected substring.
 - MIT-BIH `S` / `j` route to idx 19 (PSVC), not idx 16 (PAC) — v3 fix.
 - Composite rhythms `(B`, `(T`, `(AB` are absent from `MITDB_RHYTHM_MAP`.

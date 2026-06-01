@@ -338,6 +338,27 @@ MITDB_DEFAULT_NORMAL: tuple[int, ...] = (1, 2)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Signal-state labels (virtual indices 150-151) — NOT model output
+# ═══════════════════════════════════════════════════════════════════════════
+# These are virtual labels that live beyond the 150-head model output and
+# describe the SIGNAL STATE of a window, not an arrhythmia prediction. They are
+# populated by the QC / FP-suppression layer (hf_noise ratio for Noisy,
+# mean_motion in mG for High Motion — see multiclass_fp_suppression.py) and by
+# native dataset annotations where available (e.g. challenge 2017 `~`).
+#
+# Invariants:
+#   - These indices are OUT OF RANGE for tasks.txt (which has exactly 150 entries).
+#     Any code that does tasks[i] for i >= 150 will IndexError — by design.
+#   - They are NOT in DETECTION_SCOPE. The model does not predict them.
+#   - They appear in the cross-dataset label map (idx column) so all label
+#     vocabulary lives in one place.
+SIGNAL_STATE_LABELS: dict[int, str] = {
+    150: "Noisy",         # signal corrupted by HF noise / baseline artifact
+    151: "High Motion",   # accelerometer mean_motion above the per-head gate
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # PTB-XL active-class set
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -355,17 +376,17 @@ PTBXL_ACTIVE_CLASSES: frozenset[int] = frozenset({
 # Detection scope — GLOBAL HARD RULE (6 events)
 # ═══════════════════════════════════════════════════════════════════════════
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │ HARD RULE (2026-05-29): the system detects EXACTLY these 7 labels —       │
-# │ 6 fzark events + NORMAL ECG. Nothing else is a valid detection target.    │
+# │ HARD RULE (2026-06-01): the system detects EXACTLY these 6 fzark events.  │
+# │ Nothing else is a valid detection target.                                 │
 # │   Atrial Fibrillation (5) · Bradycardia (4) · Sinus Tachycardia (6)       │
 # │   Supraventricular Run (93) · Ventricular Run (98) · Pause (142)          │
-# │   Normal ECG (2)                                                          │
 # │ This is the single source of truth; consistency is asserted at import.    │
+# │ NOTE (2026-06-01): NORMAL SINUS RHYTHM (1) and NORMAL ECG (2) were removed │
+# │ from scope — they are normal-STATE backbone heads, not detection targets;  │
+# │ head 1 had 0 PTB-XL GT (100% FP) and head 2 was always subsumed by it.     │
 # └─────────────────────────────────────────────────────────────────────────┘
 # SCOPE_EVENT_TO_HEAD is the authoritative scope mapping (event/label → head).
-# NORMAL ECG is the "normal" reference label — it is now a first-class entry in the
-# fzark classification system (FZARK_ONTOLOGY / FZARK_LABEL_MAP, head 2), though it
-# is a STATE rather than an arrhythmia event (hence no empirical PPV / reliability).
+# All 6 scope events are fzark arrhythmia events (each present in FZARK_LABEL_MAP).
 SCOPE_EVENT_TO_HEAD: dict[str, int] = {
     "Atrial Fibrillation":   5,
     "Bradycardia":           4,
@@ -373,18 +394,22 @@ SCOPE_EVENT_TO_HEAD: dict[str, int] = {
     "Supraventricular Run":  93,
     "Ventricular Run":       98,
     "Pause":                 142,
-    "Normal ECG":            2,    # backbone NORMAL ECG head (not a fzark event)
 }
 SCOPE_EVENTS: frozenset[str] = frozenset(SCOPE_EVENT_TO_HEAD)
+
+# Backbone reference labels that would be in scope for detection but are NOT fzark
+# arrhythmia events (normal-state labels). Currently EMPTY — NORMAL ECG and NORMAL
+# SINUS RHYTHM were removed from scope 2026-06-01. Retained as a hook so a future
+# non-fzark scope label can be exempted from the fzark-consistency check.
+NON_FZARK_SCOPE_EVENTS: frozenset[str] = frozenset()
 
 # DETECTION_SCOPE maps each in-scope ECGFounder head index → its tasks.txt label.
 # Heads 93/98/142 carry the head's own tasks.txt label (SVT / VT / sinus pause),
 # a "good" — not exact — semantic match to SV Run / V Run / Pause.
-# Out-of-scope heads (PVC 9, PAC 16, …) keep FZARK_ONTOLOGY entries for label
-# MAPPING, but detect()/detect_index() return None for them and the FP suppressor
-# and eval scripts skip them. (Names validated vs load_tasks() in tests.)
+# Out-of-scope heads (PVC 9, PAC 16, NORMAL ECG 2, …) keep FZARK_ONTOLOGY entries
+# for label MAPPING, but detect()/detect_index() return None for them and the FP
+# suppressor and eval scripts skip them. (Names validated vs load_tasks() in tests.)
 DETECTION_SCOPE: dict[int, str] = {
-    2:   "NORMAL ECG",                     # not a fzark event — backbone head
     4:   "SINUS BRADYCARDIA",
     5:   "ATRIAL FIBRILLATION",
     6:   "SINUS TACHYCARDIA",
@@ -512,18 +537,21 @@ def detect_index(
 # HARD-RULE invariant — enforced at import (fail loudly if the scope drifts)
 # ═══════════════════════════════════════════════════════════════════════════
 def _assert_scope_consistency() -> None:
-    """The 7-label detection scope (6 fzark events + NORMAL ECG) is a global hard
-    rule. Guarantee the views stay in sync: SCOPE_EVENT_TO_HEAD values must equal
-    DETECTION_SCOPE's keys, and every scope label must agree with FZARK_LABEL_MAP
-    (NORMAL ECG is now a first-class fzark entry too)."""
-    if len(SCOPE_EVENT_TO_HEAD) != 7:
-        raise AssertionError(f"SCOPE_EVENT_TO_HEAD must hold exactly 7 labels, got {len(SCOPE_EVENT_TO_HEAD)}")
+    """The 6-label detection scope (6 fzark events) is a global hard rule.
+    Guarantee the views stay in sync: SCOPE_EVENT_TO_HEAD values must equal
+    DETECTION_SCOPE's keys, and every fzark scope label must agree with
+    FZARK_LABEL_MAP. Any non-fzark backbone label in NON_FZARK_SCOPE_EVENTS
+    (currently empty) is exempt from the fzark-consistency check."""
+    if len(SCOPE_EVENT_TO_HEAD) != 6:
+        raise AssertionError(f"SCOPE_EVENT_TO_HEAD must hold exactly 6 labels, got {len(SCOPE_EVENT_TO_HEAD)}")
     if set(SCOPE_EVENT_TO_HEAD.values()) != set(DETECTION_SCOPE):
         raise AssertionError(
             "Detection-scope hard rule violated: SCOPE_EVENT_TO_HEAD heads "
             f"{sorted(SCOPE_EVENT_TO_HEAD.values())} != DETECTION_SCOPE keys {sorted(DETECTION_SCOPE)}"
         )
     for ev, head in SCOPE_EVENT_TO_HEAD.items():
+        if ev in NON_FZARK_SCOPE_EVENTS:
+            continue  # backbone state label — no fzark event to agree with
         if FZARK_LABEL_MAP.get(ev) != head:
             raise AssertionError(
                 f"Scope label {ev!r} head {head} disagrees with FZARK_LABEL_MAP "

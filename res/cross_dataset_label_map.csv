@@ -1,7 +1,7 @@
 idx,head_name,in_scope,challenge2017,cinc2015,ecg_tp_fzark,ecg_fp_fzark,mimic,mitdb,move,ptbxl_active
 0,ABNORMAL ECG,,,,,,,,,
 1,NORMAL SINUS RHYTHM,,,,,,,default-normal,,
-2,NORMAL ECG,yes,N (normal),,Normal ECG,Normal ECG,,default-normal,,yes
+2,NORMAL ECG,,N (normal),,Normal ECG,Normal ECG,,default-normal,,yes
 3,SINUS RHYTHM,,,,,,,,,yes
 4,SINUS BRADYCARDIA,yes,,alarm:bradycardia,Bradycardia,Bradycardia,sinus bradycardia; marked sinus bradycardia; bradycardia,rhythm:(SBR,,yes
 5,ATRIAL FIBRILLATION,yes,A (atrial fibrillation),,Atrial Fibrillation,Atrial Fibrillation,atrial fibrillation; atrial fib; afib; a-fib,rhythm:(AFIB,,yes
@@ -149,3 +149,5 @@ idx,head_name,in_scope,challenge2017,cinc2015,ecg_tp_fzark,ecg_fp_fzark,mimic,mi
 147,WITH 2:1 AV CONDUCTION,,,,,,,,,
 148,WITH AV DISSOCIATION,,,,,,,,,
 149,MULTIFOCAL ATRIAL TACHYCARDIA,,,,,,,,,
+150,Noisy,,~ (noise / unclassifiable),,,,,,,
+151,High Motion,,,,,,,,accelerometer mean_motion above per-head gate,

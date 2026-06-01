@@ -23,6 +23,7 @@ from label_config import (
     MITDB_BEAT_MAP, MITDB_RHYTHM_MAP, MITDB_DEFAULT_NORMAL,
     PTBXL_ACTIVE_CLASSES,
     DETECTION_SCOPE,
+    SIGNAL_STATE_LABELS,
 )
 from scripts.cinc2015.cinc2015_label_map import ALARM_TO_HEAD
 from scripts.mimic.mimic_label_map import HEAD_SPEC as MIMIC_SPEC
@@ -62,9 +63,18 @@ def _invert_mimic() -> dict[int, list[str]]:
 
 # Challenge 2017 is not in label_config (no committed mapper). Hard-coded here
 # from the trivial 4-class routing documented in GLOBAL_LABEL_MAP.md §7.2.
+# `~` is the noise/unclassifiable class and routes to the signal-state label 150.
 CHALLENGE2017: dict[int, str] = {
-    2: "N (normal)",
-    5: "A (atrial fibrillation)",
+    2:   "N (normal)",
+    5:   "A (atrial fibrillation)",
+    150: "~ (noise / unclassifiable)",
+}
+
+# MOVE has no native rhythm labels, but high-motion windows are computed at
+# inference time by the accelerometer-based gate (mean_motion in mG, see
+# multiclass_fp_suppression.py). Recorded here for the cross-dataset map.
+MOVE_VIRTUAL: dict[int, str] = {
+    151: "accelerometer mean_motion above per-head gate",
 }
 
 
@@ -93,7 +103,11 @@ def main() -> None:
     ]
     rows.append(header)
 
-    for idx, name in enumerate(tasks):
+    # 0..149 = model heads from tasks.txt; 150..151 = virtual signal-state labels.
+    indexed_names: list[tuple[int, str]] = list(enumerate(tasks))
+    indexed_names += sorted(SIGNAL_STATE_LABELS.items())
+
+    for idx, name in indexed_names:
         # ecg_fp uses the same FZARK ontology as ecg_tp — same event names,
         # opposite verdict semantic (hard negative). The mapping is identical.
         fzark_events = "; ".join(sorted(fz.get(idx, [])))
@@ -107,7 +121,7 @@ def main() -> None:
             fzark_events,
             "; ".join(mm.get(idx, [])),
             "; ".join(mi.get(idx, [])),
-            "",  # MOVE has no native rhythm labels
+            MOVE_VIRTUAL.get(idx, ""),
             "yes" if idx in ptbxl else "",
         ])
 

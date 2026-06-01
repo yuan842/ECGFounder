@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-ECGFounder emits 150 independent probabilities from a fixed canonical vocabulary ([tasks.txt](../tasks.txt), SHA-pinned). Eight datasets feed labels into that vocabulary, each with a different native scheme:
+ECGFounder emits 150 independent probabilities from a fixed canonical vocabulary ([tasks.txt](../tasks.txt), SHA-pinned). The label vocabulary used across the project is the **150 model heads plus 2 virtual signal-state indices (150 = Noisy, 151 = High Motion)** populated by the QC / FP-suppression layer rather than by the model — see `SIGNAL_STATE_LABELS` in [label_config.py](../label_config.py) and §5.11 below. Eight datasets feed labels into that vocabulary, each with a different native scheme:
 
 | Dataset | Native scheme | Granularity | Mapping module |
 |---|---|---|---|
@@ -21,14 +21,14 @@ ECGFounder emits 150 independent probabilities from a fixed canonical vocabulary
 | MOVE | activity tags only | continuous | *no rhythm labels — FP-only* |
 | PTB-XL | pre-computed 150-vector from SCP codes | record | [csv/ptbxl_label.csv](../csv/ptbxl_label.csv) + `PTBXL_ACTIVE_CLASSES` |
 
-The map answers two questions per head: **(a)** which datasets carry a label that routes here, and **(b)** why that routing is correct. **36 of 150 heads** receive at least one dataset label; the remaining 114 are heads the model can fire but for which we have no labelled positives anywhere.
+The map answers two questions per head: **(a)** which datasets carry a label that routes here, and **(b)** why that routing is correct. **36 of 150 model heads** receive at least one dataset label; the remaining 114 are heads the model can fire but for which we have no labelled positives anywhere. The 2 virtual signal-state indices each carry one native dataset route.
 
 ---
 
 ## 2. Legend (column conventions)
 
 - **idx / head_name** — position and canonical name from `tasks.txt`.
-- **in_scope** — `yes` if the head is one of the 7 detection-scope heads (Normal-ECG, Brady, AFib, Sinus Tachy, SVT-Run, V-Run, Pause). Anything else is *mapped for labelling only*, never *detected*.
+- **in_scope** — `yes` if the head is one of the 6 detection-scope heads (Brady, AFib, Sinus Tachy, SVT-Run, V-Run, Pause). Anything else — including the normal-state heads NSR (1) and Normal-ECG (2), removed from scope 2026-06-01 — is *mapped for labelling only*, never *detected*.
 - **challenge2017** — the cinc17 class string that routes here. Mapping is trivial-by-design but not implemented in code; included for completeness.
 - **cinc2015** — alarm-token substring (prefixed `alarm:`). A *true* alarm sets `vec[head]=1`; a *false* alarm yields an all-zero vector (hard negative).
 - **ecg_tp_fzark / ecg_fp_fzark** — fzark `Event Type` name(s) that route to this head. The two columns are identical content because ecg_tp and ecg_fp share the same ontology; they differ only in **verdict semantic** (TP = positive, FP = hard negative).
@@ -55,12 +55,12 @@ All routings have been ratified against `Dataset Classification Cross-Mapping.xl
 
 ## 4. The 36 mapped heads — side-by-side
 
-Heads not listed below are in the CSV with empty per-dataset columns. The 7 in-scope heads are **bold**.
+Heads not listed below are in the CSV with empty per-dataset columns. The 8 in-scope heads are **bold**.
 
 | idx | head | in_scope | challenge2017 | cinc2015 | fzark (tp/fp) | mimic | mitdb | ptbxl |
 |---:|---|:---:|---|---|---|---|---|:---:|
 | 1 | NORMAL SINUS RHYTHM | — | | | | | default-normal | |
-| **2** | **NORMAL ECG** | **yes** | N | | Normal ECG | | default-normal | yes |
+| 2 | NORMAL ECG | — | N | | Normal ECG | | default-normal | yes |
 | 3 | SINUS RHYTHM | — | | | | | | yes |
 | **4** | **SINUS BRADYCARDIA** | **yes** | | bradycardia | Bradycardia | sinus bradycardia / marked sinus bradycardia / bradycardia | (SBR | yes |
 | **5** | **ATRIAL FIBRILLATION** | **yes** | A | | Atrial Fibrillation | atrial fibrillation / afib / a-fib | (AFIB | yes |
@@ -95,8 +95,11 @@ Heads not listed below are in the CSV with empty per-dataset columns. The 7 in-s
 | 107 | WOLFF-PARKINSON-WHITE | — | | | | | | yes |
 | 112 | NONSPECIFIC INTRAVENTRICULAR BLOCK | — | | | | | | yes |
 | **142** | **WITH SINUS PAUSE** | **yes** | | asystole ⚠ | Pause | sinus pause / sinoatrial pause / sinus arrest / asystole | | |
+| 150 | Noisy *(virtual)* | — | `~` | | | | | | |
+| 151 | High Motion *(virtual)* | — | | | | | | MOVE accelerometer gate | |
 
 ⚠ = mapping is a clinical proxy or relaxation — see §5 justification.
+*virtual* = not a model head; populated by the QC / FP-suppression layer. See §5.11.
 
 ---
 
@@ -106,8 +109,8 @@ Heads are grouped by clinical category. Each entry explains *why* every non-triv
 
 ### 5.1 Rhythm reference (heads 1, 2, 3)
 
-- **idx 1 — NORMAL SINUS RHYTHM.** MIT-BIH default-normal fallback only. PTB-XL does not carry positives here (it uses head 2 + head 3 for the "normal" cluster); MIMIC text routing has no entry because "normal sinus rhythm" lands implicitly in head 3 via PTB-XL's pre-computed labels — there is no live MIMIC mapping into this head.
-- **idx 2 — NORMAL ECG ✅ scope.** The backbone "normal" head. PTB-XL has 9,514 positives (43.6%). MIT-BIH sets it default-on. Challenge 2017 `N` and fzark `Normal ECG` both route here exactly. CINC2015/MIMIC do **not** explicitly set head 2; their negative-cases route to an all-zero vector by design (see §7.3 of GLOBAL_LABEL_MAP for the implication on Normal-ECG metrics).
+- **idx 1 — NORMAL SINUS RHYTHM (not in scope; removed 2026-06-01).** MIT-BIH default-normal fallback only. **PTB-XL carries 0 positives here** (it uses head 2 + head 3 for the "normal" cluster, never head 1). Briefly added to scope 2026-05-31 then removed: the base model fires it on ~80% of records, all of which score as FP against the PTB-XL label set (100% FP, unvalidatable — see `res/ptbxl_cofiring/REPORT.md`). MIMIC has no live mapping into this head.
+- **idx 2 — NORMAL ECG (not in scope; removed 2026-06-01).** The backbone "normal" head, still a first-class label-MAPPING target. PTB-XL has 9,514 positives (43.6%). MIT-BIH sets it default-on. Challenge 2017 `N` and fzark `Normal ECG` both route here exactly. Removed from detection scope because it was always subsumed by head 1 (P(NSR|Normal ECG)=1.0) and is a normal-state label, not an arrhythmia event.
 - **idx 3 — SINUS RHYTHM.** PTB-XL active. Distinct from head 2 in tasks.txt; we do not route into it from any other dataset because none of the others carry a "sinus rhythm without further qualifier" label cleanly separable from "normal ECG."
 
 ### 5.2 Rate disorders (heads 4, 6)
@@ -118,7 +121,7 @@ Heads are grouped by clinical category. Each entry explains *why* every non-triv
 ### 5.3 AFib + flutter (heads 5, 32)
 
 - **idx 5 — ATRIAL FIBRILLATION ✅ scope.** The strongest, most-validated head in the system (91.6% fzark PPV). Every dataset that carries an AFib label routes here exactly: cinc17 `A`, fzark `Atrial Fibrillation`, MIMIC `"atrial fibrillation"`/`afib`/`a-fib`, MIT-BIH `(AFIB`.
-- **idx 32 — ATRIAL FLUTTER.** MIT-BIH `(AFL` only; PTB-XL active. Not in detection scope (the 7-label hard rule excludes AFL because production fzark has insufficient flutter data). The head still receives labels for completeness.
+- **idx 32 — ATRIAL FLUTTER.** MIT-BIH `(AFL` only; PTB-XL active. Not in detection scope (the 6-label hard rule excludes AFL because production fzark has insufficient flutter data). The head still receives labels for completeness.
 
 ### 5.4 Ventricular ectopy + runs (heads 9, 98)
 
@@ -150,6 +153,15 @@ PTB-XL only. SCP codes carry `LAE`/`RAE`/`LVH`/`RVH` as discrete labels; no othe
 ### 5.10 Other PTB-XL-only heads (15, 30, 50, 78, 107)
 
 `LOW VOLTAGE QRS`, `QT HAS LENGTHENED`, `ELECTRONIC ATRIAL PACEMAKER`, `WITH QRS WIDENING`, `WOLFF-PARKINSON-WHITE`. All sourced exclusively from PTB-XL's pre-computed labels. None in detection scope; none mapped from other datasets.
+
+### 5.11 Signal-state labels (virtual indices 150, 151)
+
+Two indices live *beyond* the 150 model heads — they are not predictions, and `tasks.txt` does not list them. They describe the **signal quality / context** of a window and exist so that all label vocabulary lives in one CSV. Source of truth: `SIGNAL_STATE_LABELS` in [label_config.py](../label_config.py).
+
+- **idx 150 — Noisy.** The signal is corrupted (HF noise, baseline wander, lead disconnection). The QC layer computes `hf_noise = power(>40Hz) / total power` per window ([multiclass_fp_suppression.py:239](../multiclass_fp_suppression.py:239), aligning with `sqi.compute_raw_sqi['hf_noise_ratio']`). **Native dataset route**: Challenge 2017 `~` class (noise / unclassifiable, the only native "this is just noise" label across all eight datasets). Other cohorts rely on the QC-layer's continuous `hf_noise` score; they do not carry a discrete noise label.
+- **idx 151 — High Motion.** The accelerometer-derived `mean_motion` (mG) exceeded the per-head gate ([multiclass_fp_suppression.py:66+](../multiclass_fp_suppression.py:66) — AFib gate ≤ 5 mG, SV-Trigeminy ≥ 15 mG, V-Trigeminy ≥ 24 mG + SNR > 1.2). **Native dataset route**: MOVE, where the gate is the entire reason FP rates drop after suppression — but the routing is inference-time, not a labelled positive. No other dataset carries motion ground truth.
+
+**Why "virtual" matters.** These indices cannot be predicted by `model(x)` — its head is `nn.Linear(1024, 150)`. Any code that indexes `tasks[150]` or `probs[151]` will fail loudly (intentional). They appear *only* in label-space artifacts (this map, the CSV, downstream QC reports). Adding more signal-state labels (e.g. "Lead-off", "Saturation") in the future is a one-line extension of `SIGNAL_STATE_LABELS`; the CSV generator picks them up automatically.
 
 ---
 
