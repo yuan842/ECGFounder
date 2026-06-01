@@ -42,14 +42,14 @@ COUPLE_GROUPS: list[tuple[int, ...]] = [(SVT, VRUN)]
 
 @dataclass(frozen=True)
 class ArbiterConfig:
-    """L2 configuration. ``enabled`` is the master switch — DEFAULT OFF.
+    """L2 configuration. ``enabled`` is the master switch — DEFAULT ON (2026-06-01).
 
-    When OFF, arbitrate()/to_alerts() are pure pass-through: candidate firings
-    (prob ≥ fire_threshold) flow through unchanged, no suppression, no merge.
-    When ON, each rule can be toggled. The exclusion/couple structure is derived
-    from the PTB-XL GT co-occurrence matrix (module constants above).
+    When OFF (ArbiterConfig(enabled=False)), arbitrate()/to_alerts() are pure
+    pass-through: candidate firings (prob ≥ fire_threshold) flow through unchanged.
+    When ON (default), each rule can be toggled. The exclusion/couple structure is
+    derived from the PTB-XL GT co-occurrence matrix (module constants above).
     """
-    enabled: bool = False          # ← master switch, kept OFF for now
+    enabled: bool = True           # ← master switch, DEFAULT ON
     # float (same for all heads) OR dict[head]→threshold (per-head policy points)
     fire_threshold: "float | dict[int, float]" = 0.5
     # per-rule toggles (only consulted when enabled=True)
@@ -62,10 +62,10 @@ class ArbiterConfig:
     tau_weak: float = 0.70
     hr_brady_max: float = 56.3
 
-# default instance — L2 OFF
+# default instance — L2 ON (GT-matched)
 DEFAULT_CONFIG = ArbiterConfig()
-# ready-to-use GT-matched config (L2 ON); detector stays OFF unless given this
-GT_MATCHED_CONFIG = ArbiterConfig(enabled=True)
+GT_MATCHED_CONFIG = ArbiterConfig(enabled=True)   # alias for the default-on config
+OFF_CONFIG = ArbiterConfig(enabled=False)         # explicit pass-through
 
 
 def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, Decision]:
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         probs={BRADY: 0.80, AFIB: 0.92, TACHY: 0.61, SVT: 0.7, VRUN: 0.7, PAUSE: 0.0},
         nsr_score=0.0, context={"hr_bpm": 72.0},
     )
-    for tag, cfg in (("OFF (default)", DEFAULT_CONFIG), ("ON (GT-matched)", GT_MATCHED_CONFIG)):
+    for tag, cfg in (("OFF", OFF_CONFIG), ("ON (default, GT-matched)", DEFAULT_CONFIG)):
         print(f"\nL2 {tag}:")
         d = arbitrate(demo, cfg)
         for h, dec in d.items():

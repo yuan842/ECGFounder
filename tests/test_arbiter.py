@@ -8,7 +8,7 @@ import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from overlay.arbiter import (
-    arbitrate, to_alerts, ArbiterConfig, DEFAULT_CONFIG, GT_MATCHED_CONFIG,
+    arbitrate, to_alerts, ArbiterConfig, DEFAULT_CONFIG, GT_MATCHED_CONFIG, OFF_CONFIG,
     EXCLUSION_GROUPS, COUPLE_GROUPS, BRADY, AFIB, TACHY, SVT, VRUN, PAUSE)
 from overlay.types import ScopeScores
 
@@ -25,11 +25,16 @@ def fired(d):
 
 
 # ── master switch ────────────────────────────────────────────────────────────
-def test_default_off_is_passthrough():
+def test_explicit_off_is_passthrough():
     s = ss({BRADY: 0.9, AFIB: 0.9, TACHY: 0.9})
-    d = arbitrate(s, DEFAULT_CONFIG)
+    d = arbitrate(s, OFF_CONFIG)
     assert fired(d) == {BRADY, AFIB, TACHY}          # nothing suppressed when OFF
     assert all("L2 off" in d[h].reason for h in (BRADY, AFIB, TACHY))
+
+def test_default_is_on():
+    # DEFAULT_CONFIG is now L2 ON → exclusion group keeps one of {4,5,6}
+    s = ss({BRADY: 0.9, AFIB: 0.92, TACHY: 0.9})
+    assert len(fired(arbitrate(s, DEFAULT_CONFIG)) & {BRADY, AFIB, TACHY}) == 1
 
 
 # ── exclusion group {4,5,6}: at most one fires ──────────────────────────────

@@ -16,7 +16,7 @@ These are SKELETONS with the recommended defaults wired in:
 from overlay.types import ScopeScores, Decision, RunAlert
 from overlay.signal_quality_gate import SignalQualityGate, GateResult
 from overlay.arbiter import (arbitrate, to_alerts, SCOPE_HEADS, ArbiterConfig,
-                             DEFAULT_CONFIG, GT_MATCHED_CONFIG,
+                             DEFAULT_CONFIG, GT_MATCHED_CONFIG, OFF_CONFIG,
                              EXCLUSION_GROUPS, COUPLE_GROUPS)
 
 # inference (backbone→L1→L2) pulls in torch + checkpoints; import lazily so the
@@ -31,6 +31,6 @@ __all__ = [
     "ScopeScores", "Decision", "RunAlert",
     "SignalQualityGate", "GateResult",
     "arbitrate", "to_alerts", "SCOPE_HEADS", "ArbiterConfig", "DEFAULT_CONFIG",
-    "GT_MATCHED_CONFIG", "EXCLUSION_GROUPS", "COUPLE_GROUPS",
+    "GT_MATCHED_CONFIG", "OFF_CONFIG", "EXCLUSION_GROUPS", "COUPLE_GROUPS",
     "ScopedDetector", "L1_HEADS", "BASE_HEADS", "load_l1",
 ]
