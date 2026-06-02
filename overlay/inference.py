@@ -35,19 +35,29 @@ class ScopedDetector:
     def __init__(self, projection_ckpt: str = DEFAULT_CKPT,
                  device=None, sqg: Optional[SignalQualityGate] = None,
                  arbiter_config: Optional[ArbiterConfig] = None,
-                 enable_l2: bool = True,
+                 enable_l2: bool = True, device_config=None,
                  backbone_ckpt: Optional[str] = None):
         self.device = device or resolve_device()
         self.backbone = load_ecgfounder(self.device, ckpt_path=backbone_ckpt)
         self.backbone.eval()
-        self.l1 = load_l1(projection_ckpt, self.device)
-        self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
-        if arbiter_config is None:
-            # Decision thresholds come from the L1 TRAINING POLICY (per-head):
-            # L1 heads use the fitted threshold, base-routed heads stay at 0.5.
-            # L2 rules default ON (GT-matched arbiter); enable_l2=False disables.
+        # device_config (a DeviceConfig or path to one) overrides the default
+        # PTB profile: it names the L1 checkpoint, the per-head routing, and the
+        # per-head thresholds. Heads with source="base" use the raw backbone head.
+        if device_config is not None:
+            from overlay.device_config import load_device_config, DeviceConfig
+            dc = device_config if isinstance(device_config, DeviceConfig) else load_device_config(device_config)
+            self.l1 = load_l1(dc.l1_checkpoint, self.device)
+            self.l1_heads = dc.l1_heads()
+            fire = {h: 0.5 for h in SCOPE_HEADS}; fire.update(dc.fire_thresholds())
+        else:
+            self.l1 = load_l1(projection_ckpt, self.device)
+            self.l1_heads = list(L1_HEADS)
+            # Default PTB profile: L1 heads use their fitted threshold, base @0.5.
             fire = {h: 0.5 for h in SCOPE_HEADS}
             fire.update({h: t for h, t in self.l1.thresholds().items() if h in L1_HEADS})
+        self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
+        if arbiter_config is None:
+            # L2 rules default ON (GT-matched arbiter); enable_l2=False disables.
             arbiter_config = ArbiterConfig(enabled=enable_l2, fire_threshold=fire)
         self.arbiter_config = arbiter_config
 
@@ -68,7 +78,7 @@ class ScopedDetector:
         base = torch.sigmoid(logits).cpu()             # (1,150)
         probs: dict[int, float] = {}
         for i, h in enumerate(SCOPE_HEADS):
-            probs[h] = float(l1_probs[0, i]) if h in L1_HEADS else float(base[0, h])
+            probs[h] = float(l1_probs[0, i]) if h in self.l1_heads else float(base[0, h])
         ss = ScopeScores(
             probs=probs,
             nsr_score=float(base[0, NSR_HEAD]),        # head-1, FP feature for L2

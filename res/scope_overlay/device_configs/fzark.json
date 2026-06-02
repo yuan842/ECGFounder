@@ -1,0 +1,74 @@
+{
+  "device": "fzark",
+  "l1_checkpoint": "res/scope_overlay/fzarkSL.pth",
+  "policy": "\u03c4=min(\u03c4_fp,\u03c4_sens): per-head FP-retention < cap AND sens loss < 4% vs base (fzark val); 0-event heads \u2192 base@0.5",
+  "max_sens_loss": 0.04,
+  "margin": 0.02,
+  "scope_heads": [
+    4,
+    5,
+    6,
+    93,
+    98,
+    142
+  ],
+  "heads": {
+    "4": {
+      "name": "SINUS BRADYCARDIA",
+      "source": "fzark-L1",
+      "threshold": 0.0918,
+      "fp_limit": 0.1,
+      "binding": "fp_cap",
+      "fp_cap_met": true,
+      "test_sens": 0.9503,
+      "test_fp_retention": 0.0989
+    },
+    "5": {
+      "name": "ATRIAL FIBRILLATION",
+      "source": "fzark-L1",
+      "threshold": 0.5412,
+      "fp_limit": 0.05,
+      "binding": "sens_budget",
+      "fp_cap_met": false,
+      "test_sens": 0.9339,
+      "test_fp_retention": 0.0491
+    },
+    "6": {
+      "name": "SINUS TACHYCARDIA",
+      "source": "base",
+      "threshold": 0.5,
+      "fp_limit": null,
+      "note": "0 device events \u2192 base (recalibrate per new device)"
+    },
+    "93": {
+      "name": "SUPRAVENTRICULAR TACHYCARDIA",
+      "source": "fzark-L1",
+      "threshold": 0.0487,
+      "fp_limit": 0.4,
+      "binding": "fp_cap",
+      "fp_cap_met": true,
+      "test_sens": 0.7143,
+      "test_fp_retention": 0.3117
+    },
+    "98": {
+      "name": "VENTRICULAR TACHYCARDIA",
+      "source": "fzark-L1",
+      "threshold": 0.4499,
+      "fp_limit": 0.05,
+      "binding": "fp_cap",
+      "fp_cap_met": true,
+      "test_sens": 0.9788,
+      "test_fp_retention": 0.0186
+    },
+    "142": {
+      "name": "WITH SINUS PAUSE",
+      "source": "fzark-L1",
+      "threshold": 0.0741,
+      "fp_limit": 0.4,
+      "binding": "fp_cap",
+      "fp_cap_met": true,
+      "test_sens": 0.6,
+      "test_fp_retention": 0.275
+    }
+  }
+}
