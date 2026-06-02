@@ -1,0 +1,5 @@
+# Demo-only dependency. The Streamlit app imports the existing repo modules
+# in-place, so the repo's root requirements.txt (torch, numpy, pandas, scipy,
+# wfdb, …) must also be installed:
+#     pip install -r requirements.txt -r app/requirements.txt
+streamlit>=1.28

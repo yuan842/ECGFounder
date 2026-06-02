@@ -1,0 +1,13 @@
+[server]
+port = 8000
+address = "0.0.0.0"
+headless = true
+maxUploadSize = 25
+
+[theme]
+primaryColor = "#2563eb"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f4f6"
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,21 @@
+[Unit]
+Description=ECG demo Streamlit app
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/ubuntu/ECGFounder
+Environment=PYTHONPATH=/home/ubuntu/ECGFounder
+ExecStart=/usr/bin/python3 -m streamlit run app/app.py \
+    --server.address 0.0.0.0 \
+    --server.port 8000 \
+    --server.maxUploadSize 25 \
+    --browser.gatherUsageStats false \
+    --server.headless true
+Restart=always
+RestartSec=5
+User=ubuntu
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
