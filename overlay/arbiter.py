@@ -61,6 +61,11 @@ class ArbiterConfig:
     tau_nsr: float = 0.5
     tau_weak: float = 0.70
     hr_brady_max: float = 56.3
+    # Heads that are base-routed (uncalibrated, base@0.5) on this device. They
+    # are excluded from rate-exclusion arbitration: an uncalibrated head's score
+    # is too unreliable to suppress a calibrated peer (or be suppressed by one).
+    # Set from DeviceConfig (heads with source="base"); see overlay/inference.py.
+    uncalibrated_heads: frozenset = frozenset()
 
 # default instance — L2 ON (GT-matched)
 DEFAULT_CONFIG = ArbiterConfig()
@@ -102,12 +107,17 @@ def arbitrate(s: ScopeScores, config: ArbiterConfig | None = None) -> dict[int, 
 
     # 3. exclusion groups — GT pairwise 0 ⇒ at most one head fires.
     #    Directional overrides first (AFib▸Tachy), then keep best margin-over-threshold.
+    #    Base-routed (uncalibrated) heads on this device are EXCLUDED from the
+    #    arbitration — their base@0.5 score isn't reliable enough to suppress (or
+    #    be suppressed by) a calibrated peer. They flow through unchanged.
     if cfg.rate_exclusion:
+        uncal = cfg.uncalibrated_heads
         for group in EXCLUSION_GROUPS:
             for hi, lo in DIRECTIONAL:
-                if hi in group and lo in group and fired[hi] and fired[lo]:
+                if (hi in group and lo in group and fired[hi] and fired[lo]
+                        and hi not in uncal and lo not in uncal):
                     suppress(lo, f"{DETECTION_SCOPE[hi]}▸{DETECTION_SCOPE[lo]} (AF-RVR)")
-            members = [h for h in group if fired[h]]
+            members = [h for h in group if fired[h] and h not in uncal]
             if len(members) > 1:
                 best = max(members, key=margin)
                 for h in members:

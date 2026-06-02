@@ -93,6 +93,29 @@ def test_hr_plausibility_blocks_fast_brady():
     assert BRADY in fired(arbitrate(s2, ON))
 
 
+# ── uncalibrated (base-routed) heads excluded from rate-exclusion ───────────
+def test_uncalibrated_head_excluded_from_rate_arbitration():
+    # On a device where TACHY is base-routed (uncalibrated, base@0.5), TACHY
+    # must NOT suppress AFib via the directional rule, nor lose by margin —
+    # it is simply excluded from the arbitration and flows through unchanged.
+    cfg = ArbiterConfig(enabled=True, uncalibrated_heads=frozenset({TACHY}))
+    # directional case: AFib + Tachy both fire — neither suppresses the other
+    s = ss({AFIB: 0.6, TACHY: 0.99})
+    f = fired(arbitrate(s, cfg))
+    assert AFIB in f and TACHY in f
+    # margin case: Brady + Tachy both fire — uncalibrated Tachy flows through
+    s2 = ss({BRADY: 0.95, TACHY: 0.99}, hr=45)
+    f2 = fired(arbitrate(s2, cfg))
+    assert BRADY in f2 and TACHY in f2
+
+def test_uncalibrated_head_does_not_suppress_calibrated_peer():
+    # If AFib were uncalibrated, it must NOT win the AFib▸Tachy directional rule.
+    cfg = ArbiterConfig(enabled=True, uncalibrated_heads=frozenset({AFIB}))
+    s = ss({AFIB: 0.99, TACHY: 0.6})
+    f = fired(arbitrate(s, cfg))
+    assert AFIB in f and TACHY in f
+
+
 # ── structure sanity ─────────────────────────────────────────────────────────
 def test_groups_match_gt_structure():
     assert (BRADY, AFIB, TACHY) in EXCLUSION_GROUPS

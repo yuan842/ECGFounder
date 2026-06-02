@@ -43,22 +43,32 @@ class ScopedDetector:
         # device_config (a DeviceConfig or path to one) overrides the default
         # PTB profile: it names the L1 checkpoint, the per-head routing, and the
         # per-head thresholds. Heads with source="base" use the raw backbone head.
+        uncalibrated: frozenset[int] = frozenset()
+        device_name = "default"
         if device_config is not None:
             from overlay.device_config import load_device_config, DeviceConfig
             dc = device_config if isinstance(device_config, DeviceConfig) else load_device_config(device_config)
             self.l1 = load_l1(dc.l1_checkpoint, self.device)
             self.l1_heads = dc.l1_heads()
             fire = {h: 0.5 for h in SCOPE_HEADS}; fire.update(dc.fire_thresholds())
+            # base-routed heads on this device are uncalibrated (base@0.5) — the
+            # L2 arbiter excludes them from rate-exclusion arbitration.
+            uncalibrated = frozenset(dc.base_heads())
+            device_name = dc.device                # device-specific SQG threshold
         else:
             self.l1 = load_l1(projection_ckpt, self.device)
             self.l1_heads = list(L1_HEADS)
             # Default PTB profile: L1 heads use their fitted threshold, base @0.5.
             fire = {h: 0.5 for h in SCOPE_HEADS}
             fire.update({h: t for h, t in self.l1.thresholds().items() if h in L1_HEADS})
-        self.sqg = sqg or SignalQualityGate(enabled=False)        # OFF by default
+        # SQG is the global pre-detection quality policy — DEFAULT ON (2026-06-02).
+        # Fail-open: only gates when raw-stage SQI (snr_proxy/baseline_drift) is
+        # passed to score(); absent ⇒ pass-through (e.g. PTB-XL has no SQI/accel).
+        self.sqg = sqg or SignalQualityGate(device=device_name)   # ON, device-specific τ
         if arbiter_config is None:
             # L2 rules default ON (GT-matched arbiter); enable_l2=False disables.
-            arbiter_config = ArbiterConfig(enabled=enable_l2, fire_threshold=fire)
+            arbiter_config = ArbiterConfig(enabled=enable_l2, fire_threshold=fire,
+                                           uncalibrated_heads=uncalibrated)
         self.arbiter_config = arbiter_config
 
     @torch.no_grad()

@@ -36,7 +36,12 @@ class PipelineResult:
 
 
 class FPSuppressionPipeline:
-    def __init__(self, device="fzark", *, motion: bool = True, sqi: bool = True):
+    def __init__(self, device="fzark", *, motion: bool = True, sqi: bool = False):
+        # sqi DEFAULT OFF (2026-06-02): SQI-based quality gating moved upstream to
+        # the S0 SignalQualityGate (overlay.signal_quality_gate, default ON), which
+        # rejects Noisy samples before detection. The motion family stays ON. Pass
+        # sqi=True to re-enable downstream per-event SQI suppression (e.g. the
+        # production-v2 equivalence test, which validates the SQI algorithm).
         self.profile: DeviceProfile = (
             device if isinstance(device, DeviceProfile) else get_profile(device))
         self.motion = MotionFPSuppressor(self.profile, enabled=motion)

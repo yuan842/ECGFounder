@@ -28,6 +28,17 @@ The system detects **EXACTLY these 6 labels — nothing else is a valid detectio
 - The full `FZARK_ONTOLOGY` (now **14 labels** — 13 events + **Normal ECG**, head 2) is retained for label MAPPING — it is **not** the detection set. The §-tables below describe mapping; detection is bounded by the 6 labels above. (Normal ECG remains a first-class `FZARK_ONTOLOGY` mapping entry but, like Normal Sinus Rhythm, is **no longer a detection target** as of 2026-06-01 — both are normal-state labels, not arrhythmia events, so they have no empirical PPV / reliability.)
 - To change the scope: edit `SCOPE_EVENT_TO_HEAD` **and** `DETECTION_SCOPE` together (the assertion enforces they agree) — and update this section.
 
+### Final-classification scope (detection scope + Noisy)
+
+The 6-head **detection** scope above is the hard rule and is unchanged. For terminal per-sample classification, `label_config.FINAL_CLASSIFICATION_SCOPE = DETECTION_SCOPE + {150: "Noisy"}` (helpers `final_classification_scope()`, `in_final_scope()`). A window's final label is one of the 6 arrhythmias **or** `Noisy`.
+
+| final class | index | source |
+|---|---|---|
+| (the 6 detection events) | 4/5/6/93/98/142 | backbone heads |
+| **Noisy** | **150** | S0 Signal-Quality Gate (`overlay.signal_quality_gate`) — window uninterpretable, detection skipped |
+
+`Noisy` is a **signal-STATE** (`SIGNAL_STATE_LABELS[150]`), **not** a backbone detection head — it never enters `DETECTION_SCOPE`. The import assertion enforces that every `FINAL_STATE_CLASSES` entry is a signal-state index (≥150), so the 6-head detection rule cannot be diluted by adding final classes. To add another terminal state later (e.g. High Motion 151), add it to `FINAL_STATE_CLASSES` only.
+
 ---
 
 ## 0. What the ECGFounder model emits

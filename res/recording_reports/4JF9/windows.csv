@@ -1,0 +1,378 @@
+window_id,t_start_s,t_end_s,activity,motion_mg,p_4,p_5,p_6,p_93,p_98,p_142,detections
+4JF9_w0000,212.0,222.0,baseline,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0001,222.0,232.0,baseline,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0002,232.0,242.0,baseline,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0003,242.0,252.0,baseline,1.05,0.061,0.445,0.109,0.065,0.041,0.004,-
+4JF9_w0004,252.0,262.0,lift,0.69,0.065,0.714,0.131,0.053,0.068,0.004,Atrial Fibrillation
+4JF9_w0005,262.0,272.0,lift,0.71,0.078,0.407,0.16,0.074,0.081,0.003,-
+4JF9_w0006,272.0,282.0,lift,0.69,0.044,0.226,0.998,0.095,0.089,0.001,Sinus Tachycardia
+4JF9_w0007,282.0,292.0,lift,0.7,0.053,0.544,0.971,0.08,0.072,0.002,Atrial Fibrillation; Sinus Tachycardia
+4JF9_w0008,292.0,302.0,lift,0.7,0.06,0.562,0.98,0.126,0.112,0.002,Atrial Fibrillation; Sinus Tachycardia
+4JF9_w0009,302.0,312.0,lift,0.7,0.058,0.501,0.975,0.113,0.135,0.003,Atrial Fibrillation; Sinus Tachycardia
+4JF9_w0010,312.0,322.0,lift,0.66,0.215,0.147,0.328,0.031,0.067,0.002,-
+4JF9_w0011,322.0,332.0,lift,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0012,332.0,342.0,lift,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0013,342.0,352.0,lift,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0014,352.0,362.0,lift,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0015,362.0,372.0,lift,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0016,372.0,382.0,lift,0.73,0.298,0.209,0.095,0.042,0.036,0.001,-
+4JF9_w0017,382.0,392.0,lift,0.67,0.97,0.235,0.039,0.036,0.047,0.009,Bradycardia(suppressed)
+4JF9_w0018,392.0,402.0,lift,0.7,0.983,0.128,0.031,0.029,0.036,0.002,Bradycardia(suppressed)
+4JF9_w0019,402.0,412.0,lift,0.71,0.087,0.37,0.223,0.043,0.045,0.007,-
+4JF9_w0020,412.0,422.0,greetings,0.73,0.088,0.294,0.055,0.038,0.031,0.006,-
+4JF9_w0021,422.0,432.0,greetings,0.69,0.993,0.14,0.033,0.028,0.038,0.005,Bradycardia(suppressed)
+4JF9_w0022,432.0,442.0,greetings,0.7,0.992,0.211,0.047,0.02,0.028,0.007,Bradycardia(suppressed)
+4JF9_w0023,442.0,452.0,greetings,0.7,0.96,0.298,0.073,0.034,0.039,0.007,Bradycardia(suppressed)
+4JF9_w0024,452.0,462.0,greetings,0.69,0.131,0.342,0.053,0.037,0.038,0.005,-
+4JF9_w0025,462.0,472.0,greetings,0.69,0.055,0.635,0.058,0.039,0.033,0.003,Atrial Fibrillation
+4JF9_w0026,472.0,482.0,greetings,1.05,0.035,0.098,0.017,0.013,0.011,0.0,-
+4JF9_w0027,482.0,492.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0028,492.0,502.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0029,502.0,512.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0030,512.0,522.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0031,522.0,532.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0032,532.0,542.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0033,542.0,552.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0034,552.0,562.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0035,562.0,572.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0036,572.0,582.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0037,582.0,592.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0038,592.0,602.0,greetings,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0039,602.0,612.0,greetings,0.63,0.208,0.104,0.462,0.04,0.107,0.001,-
+4JF9_w0040,612.0,622.0,greetings,0.7,0.079,0.268,0.065,0.052,0.038,0.003,-
+4JF9_w0041,622.0,632.0,gesticulate,0.72,0.038,0.523,0.057,0.023,0.034,0.001,Atrial Fibrillation
+4JF9_w0042,632.0,642.0,gesticulate,0.67,0.059,0.609,0.056,0.049,0.031,0.001,Atrial Fibrillation
+4JF9_w0043,642.0,652.0,gesticulate,0.68,0.064,0.175,0.062,0.04,0.033,0.001,-
+4JF9_w0044,652.0,662.0,gesticulate,0.67,0.084,0.594,0.074,0.039,0.056,0.002,Atrial Fibrillation
+4JF9_w0045,662.0,672.0,gesticulate,0.7,0.083,0.197,0.127,0.048,0.066,0.002,-
+4JF9_w0046,672.0,682.0,gesticulate,0.71,0.07,0.259,0.054,0.029,0.023,0.001,-
+4JF9_w0047,682.0,692.0,gesticulate,0.7,0.026,0.92,0.085,0.054,0.057,0.002,Atrial Fibrillation
+4JF9_w0048,692.0,702.0,gesticulate,0.69,0.092,0.489,0.116,0.066,0.045,0.005,-
+4JF9_w0049,702.0,712.0,gesticulate,0.69,0.104,0.547,0.104,0.05,0.039,0.003,Atrial Fibrillation
+4JF9_w0050,712.0,722.0,gesticulate,0.69,0.134,0.257,0.164,0.035,0.053,0.008,-
+4JF9_w0051,722.0,732.0,gesticulate,0.91,0.009,0.113,0.025,0.025,0.022,0.0,-
+4JF9_w0052,732.0,742.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0053,742.0,752.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0054,752.0,762.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0055,762.0,772.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0056,772.0,782.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0057,782.0,792.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0058,792.0,802.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0059,802.0,812.0,gesticulate,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0060,812.0,822.0,gesticulate,0.91,0.118,0.346,0.093,0.062,0.068,0.008,-
+4JF9_w0061,822.0,832.0,walk_before,0.71,0.078,0.245,0.036,0.026,0.024,0.001,-
+4JF9_w0062,832.0,842.0,walk_before,0.73,0.046,0.294,0.055,0.066,0.038,0.002,-
+4JF9_w0063,842.0,852.0,walk_before,0.69,0.067,0.103,0.035,0.024,0.027,0.001,-
+4JF9_w0064,852.0,862.0,walk_before,0.69,0.099,0.206,0.032,0.02,0.014,0.001,-
+4JF9_w0065,862.0,872.0,walk_before,0.68,0.109,0.243,0.044,0.027,0.029,0.003,-
+4JF9_w0066,872.0,882.0,walk_before,0.7,0.081,0.593,0.036,0.051,0.035,0.003,Atrial Fibrillation
+4JF9_w0067,882.0,892.0,walk_before,0.74,0.061,0.725,0.122,0.049,0.056,0.004,Atrial Fibrillation
+4JF9_w0068,892.0,902.0,walk_before,0.71,0.052,0.958,0.128,0.047,0.053,0.002,Atrial Fibrillation
+4JF9_w0069,902.0,912.0,walk_before,0.71,0.075,0.163,0.087,0.05,0.05,0.002,-
+4JF9_w0070,912.0,922.0,walk_before,0.75,0.064,0.303,0.222,0.056,0.051,0.001,-
+4JF9_w0071,922.0,932.0,walk_before,0.7,0.053,0.355,0.116,0.041,0.052,0.003,-
+4JF9_w0072,932.0,942.0,walk_before,0.69,0.036,0.354,0.066,0.023,0.02,0.001,-
+4JF9_w0073,942.0,952.0,walk_before,0.6,0.305,0.168,0.349,0.05,0.072,0.003,-
+4JF9_w0074,952.0,962.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0075,962.0,972.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0076,972.0,982.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0077,982.0,992.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0078,992.0,1002.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0079,1002.0,1012.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0080,1012.0,1022.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0081,1022.0,1032.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0082,1032.0,1042.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0083,1042.0,1052.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0084,1052.0,1062.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0085,1062.0,1072.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0086,1072.0,1082.0,walk_before,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0087,1082.0,1092.0,walk_before,0.72,0.292,0.132,0.158,0.095,0.097,0.001,-
+4JF9_w0088,1092.0,1102.0,walk_before,0.73,0.095,0.165,0.042,0.033,0.031,0.002,-
+4JF9_w0089,1102.0,1112.0,walk_before,0.67,0.123,0.227,0.055,0.031,0.032,0.003,-
+4JF9_w0090,1112.0,1122.0,walk_before,0.75,0.113,0.82,0.071,0.086,0.062,0.004,Atrial Fibrillation
+4JF9_w0091,1122.0,1132.0,run,1.24,0.072,0.88,0.236,0.053,0.076,0.005,Atrial Fibrillation(suppressed)
+4JF9_w0092,1132.0,1142.0,run,2.17,0.065,0.473,0.978,0.107,0.154,0.001,Sinus Tachycardia
+4JF9_w0093,1142.0,1152.0,run,1.98,0.061,0.185,0.995,0.214,0.245,0.002,Sinus Tachycardia
+4JF9_w0094,1152.0,1162.0,run,2.0,0.087,0.305,0.985,0.426,0.587,0.003,Sinus Tachycardia; Ventricular Run
+4JF9_w0095,1162.0,1172.0,run,2.29,0.081,0.256,0.974,0.793,0.83,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0096,1172.0,1182.0,run,2.47,0.11,0.311,0.987,0.881,0.882,0.005,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0097,1182.0,1192.0,run,2.39,0.087,0.395,0.987,0.875,0.911,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0098,1192.0,1202.0,run,2.24,0.072,0.263,0.981,0.869,0.886,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0099,1202.0,1212.0,run,1.94,0.067,0.237,0.979,0.874,0.911,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0100,1212.0,1222.0,run,2.6,0.076,0.246,0.984,0.881,0.904,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0101,1222.0,1232.0,run,2.47,0.063,0.262,0.983,0.895,0.931,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0102,1232.0,1242.0,run,2.27,0.052,0.239,0.976,0.941,0.964,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0103,1242.0,1252.0,run,2.73,0.05,0.216,0.982,0.948,0.971,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0104,1252.0,1262.0,run,2.58,0.06,0.247,0.972,0.949,0.962,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0105,1262.0,1272.0,run,2.37,0.051,0.273,0.973,0.92,0.956,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0106,1272.0,1282.0,run,2.62,0.063,0.281,0.979,0.946,0.952,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0107,1282.0,1292.0,run,2.04,0.057,0.27,0.982,0.947,0.967,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0108,1292.0,1302.0,run,2.32,0.071,0.279,0.977,0.942,0.964,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0109,1302.0,1312.0,run,2.49,0.053,0.25,0.978,0.951,0.964,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0110,1312.0,1322.0,run,2.34,0.069,0.237,0.979,0.946,0.947,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0111,1322.0,1332.0,run,2.41,0.051,0.195,0.977,0.958,0.971,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0112,1332.0,1342.0,run,2.49,0.05,0.25,0.986,0.949,0.971,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0113,1342.0,1352.0,run,2.6,0.053,0.24,0.984,0.955,0.969,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0114,1352.0,1362.0,run,2.27,0.073,0.241,0.969,0.968,0.978,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0115,1362.0,1372.0,run,2.33,0.064,0.229,0.961,0.972,0.977,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0116,1372.0,1382.0,run,2.74,0.061,0.259,0.978,0.95,0.965,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0117,1382.0,1392.0,run,2.83,0.061,0.228,0.986,0.951,0.969,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0118,1392.0,1402.0,run,3.15,0.047,0.212,0.978,0.945,0.965,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0119,1402.0,1412.0,run,2.75,0.072,0.218,0.957,0.959,0.969,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0120,1412.0,1422.0,run,3.03,0.058,0.223,0.98,0.959,0.974,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0121,1422.0,1432.0,run,2.95,0.063,0.227,0.973,0.964,0.976,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0122,1432.0,1442.0,run,2.91,0.057,0.21,0.971,0.966,0.981,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0123,1442.0,1452.0,run,2.43,0.086,0.258,0.963,0.963,0.977,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0124,1452.0,1462.0,run,2.52,0.06,0.219,0.958,0.972,0.983,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0125,1462.0,1472.0,run,2.56,0.06,0.303,0.99,0.943,0.954,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0126,1472.0,1482.0,run,2.44,0.096,0.288,0.968,0.958,0.97,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0127,1482.0,1492.0,run,2.77,0.048,0.301,0.981,0.958,0.967,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0128,1492.0,1502.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0129,1502.0,1512.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0130,1512.0,1522.0,run,0.87,0.122,0.73,0.498,0.245,0.348,0.005,Atrial Fibrillation
+4JF9_w0131,1522.0,1532.0,run,2.12,0.07,0.278,0.982,0.887,0.906,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0132,1532.0,1542.0,run,2.02,0.075,0.269,0.988,0.932,0.943,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0133,1542.0,1552.0,run,2.25,0.072,0.228,0.978,0.968,0.971,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0134,1552.0,1562.0,run,2.3,0.061,0.211,0.979,0.954,0.965,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0135,1562.0,1572.0,run,2.24,0.054,0.243,0.976,0.947,0.957,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0136,1572.0,1582.0,run,2.29,0.067,0.299,0.975,0.953,0.964,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0137,1582.0,1592.0,run,2.22,0.075,0.222,0.976,0.958,0.97,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0138,1592.0,1602.0,run,2.1,0.063,0.238,0.978,0.942,0.96,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0139,1602.0,1612.0,run,2.4,0.065,0.217,0.969,0.963,0.975,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0140,1612.0,1622.0,run,2.17,0.07,0.266,0.982,0.945,0.962,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0141,1622.0,1632.0,run,2.37,0.072,0.21,0.972,0.971,0.976,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0142,1632.0,1642.0,run,2.2,0.072,0.175,0.968,0.943,0.967,0.005,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0143,1642.0,1652.0,run,2.24,0.063,0.197,0.971,0.959,0.976,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0144,1652.0,1662.0,run,2.1,0.067,0.215,0.967,0.946,0.969,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0145,1662.0,1672.0,run,2.35,0.073,0.25,0.968,0.961,0.973,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0146,1672.0,1682.0,run,2.21,0.078,0.21,0.961,0.94,0.955,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0147,1682.0,1692.0,run,2.17,0.054,0.219,0.96,0.951,0.956,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0148,1692.0,1702.0,run,2.22,0.075,0.208,0.967,0.962,0.976,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0149,1702.0,1712.0,run,2.04,0.065,0.254,0.981,0.944,0.957,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0150,1712.0,1722.0,run,2.11,0.081,0.189,0.975,0.949,0.965,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0151,1722.0,1732.0,run,2.18,0.087,0.289,0.982,0.948,0.961,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0152,1732.0,1742.0,run,2.1,0.092,0.268,0.98,0.949,0.974,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0153,1742.0,1752.0,run,2.29,0.073,0.228,0.964,0.94,0.967,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0154,1752.0,1762.0,run,1.89,0.064,0.434,0.988,0.927,0.947,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0155,1762.0,1772.0,run,1.01,0.062,0.194,0.978,0.928,0.958,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0156,1772.0,1782.0,run,1.52,0.086,0.326,0.978,0.952,0.951,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0157,1782.0,1792.0,run,1.69,0.072,0.208,0.98,0.93,0.949,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0158,1792.0,1802.0,run,1.01,0.066,0.32,0.991,0.86,0.882,0.006,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0159,1802.0,1812.0,run,1.29,0.073,0.257,0.99,0.896,0.916,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0160,1812.0,1822.0,run,1.71,0.061,0.257,0.986,0.945,0.96,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0161,1822.0,1832.0,run,1.56,0.069,0.282,0.984,0.878,0.898,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0162,1832.0,1842.0,run,0.96,0.107,0.269,0.98,0.788,0.814,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0163,1842.0,1852.0,run,2.13,0.07,0.822,0.978,0.344,0.4,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0164,1852.0,1862.0,run,1.07,0.082,0.303,0.987,0.735,0.834,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0165,1862.0,1872.0,run,1.86,0.088,0.303,0.986,0.867,0.9,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0166,1872.0,1882.0,run,1.83,0.07,0.291,0.99,0.79,0.868,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0167,1882.0,1892.0,run,1.95,0.072,0.212,0.988,0.799,0.888,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0168,1892.0,1902.0,run,1.86,0.061,0.291,0.984,0.923,0.941,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0169,1902.0,1912.0,run,1.99,0.054,0.218,0.981,0.95,0.968,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0170,1912.0,1922.0,run,2.05,0.056,0.216,0.979,0.946,0.96,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0171,1922.0,1932.0,run,2.05,0.055,0.207,0.972,0.908,0.945,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0172,1932.0,1942.0,run,2.01,0.053,0.231,0.977,0.938,0.959,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0173,1942.0,1952.0,run,2.1,0.062,0.249,0.982,0.945,0.964,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0174,1952.0,1962.0,run,2.05,0.091,0.294,0.976,0.955,0.97,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0175,1962.0,1972.0,run,2.05,0.065,0.26,0.976,0.95,0.968,0.005,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0176,1972.0,1982.0,run,2.3,0.073,0.236,0.96,0.938,0.951,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0177,1982.0,1992.0,run,2.19,0.075,0.214,0.965,0.95,0.967,0.004,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0178,1992.0,2002.0,run,2.26,0.082,0.217,0.946,0.954,0.971,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0179,2002.0,2012.0,run,2.09,0.05,0.361,0.958,0.878,0.919,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0180,2012.0,2022.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0181,2022.0,2032.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0182,2032.0,2042.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0183,2042.0,2052.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0184,2052.0,2062.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0185,2062.0,2072.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0186,2072.0,2082.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0187,2082.0,2092.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0188,2092.0,2102.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0189,2102.0,2112.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0190,2112.0,2122.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0191,2122.0,2132.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0192,2132.0,2142.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0193,2142.0,2152.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0194,2152.0,2162.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0195,2162.0,2172.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0196,2172.0,2182.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0197,2182.0,2192.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0198,2192.0,2202.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0199,2202.0,2212.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0200,2212.0,2222.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0201,2222.0,2232.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0202,2232.0,2242.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0203,2242.0,2252.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0204,2252.0,2262.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0205,2262.0,2272.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0206,2272.0,2282.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0207,2282.0,2292.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0208,2292.0,2302.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0209,2302.0,2312.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0210,2312.0,2322.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0211,2322.0,2332.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0212,2332.0,2342.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0213,2342.0,2352.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0214,2352.0,2362.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0215,2362.0,2372.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0216,2372.0,2382.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0217,2382.0,2392.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0218,2392.0,2402.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0219,2402.0,2412.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0220,2412.0,2422.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0221,2422.0,2432.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0222,2432.0,2442.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0223,2442.0,2452.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0224,2452.0,2462.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0225,2462.0,2472.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0226,2472.0,2482.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0227,2482.0,2492.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0228,2492.0,2502.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0229,2502.0,2512.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0230,2512.0,2522.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0231,2522.0,2532.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0232,2532.0,2542.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0233,2542.0,2552.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0234,2552.0,2562.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0235,2562.0,2572.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0236,2572.0,2582.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0237,2582.0,2592.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0238,2592.0,2602.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0239,2602.0,2612.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0240,2612.0,2622.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0241,2622.0,2632.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0242,2632.0,2642.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0243,2642.0,2652.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0244,2652.0,2662.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0245,2662.0,2672.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0246,2672.0,2682.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0247,2682.0,2692.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0248,2692.0,2702.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0249,2702.0,2712.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0250,2712.0,2722.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0251,2722.0,2732.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0252,2732.0,2742.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0253,2742.0,2752.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0254,2752.0,2762.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0255,2762.0,2772.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0256,2772.0,2782.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0257,2782.0,2792.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0258,2792.0,2802.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0259,2802.0,2812.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0260,2812.0,2822.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0261,2822.0,2832.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0262,2832.0,2842.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0263,2842.0,2852.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0264,2852.0,2862.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0265,2862.0,2872.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0266,2872.0,2882.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0267,2882.0,2892.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0268,2892.0,2902.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0269,2902.0,2912.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0270,2912.0,2922.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0271,2922.0,2932.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0272,2932.0,2942.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0273,2942.0,2952.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0274,2952.0,2962.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0275,2962.0,2972.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0276,2972.0,2982.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0277,2982.0,2992.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0278,2992.0,3002.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0279,3002.0,3012.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0280,3012.0,3022.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0281,3022.0,3032.0,run,1.0,0.086,0.964,0.572,0.439,0.489,0.011,Atrial Fibrillation; Sinus Tachycardia
+4JF9_w0282,3032.0,3042.0,run,0.79,0.08,0.889,0.96,0.363,0.558,0.018,Atrial Fibrillation; Sinus Tachycardia; Ventricular Run
+4JF9_w0283,3042.0,3052.0,run,1.03,0.054,0.203,0.993,0.777,0.875,0.001,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0284,3052.0,3062.0,run,1.68,0.061,0.251,0.988,0.781,0.856,0.003,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0285,3062.0,3072.0,run,1.84,0.062,0.223,0.97,0.89,0.945,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0286,3072.0,3082.0,run,1.93,0.078,0.283,0.981,0.85,0.878,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0287,3082.0,3092.0,run,1.87,0.068,0.262,0.985,0.872,0.917,0.002,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0288,3092.0,3102.0,run,1.99,0.065,0.347,0.967,0.652,0.787,0.001,Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0289,3102.0,3112.0,run,1.8,0.063,0.505,0.986,0.737,0.796,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia; Supraventricular Run; Ventricular Run
+4JF9_w0290,3112.0,3122.0,run,1.93,0.04,0.594,0.931,0.19,0.303,0.004,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0291,3122.0,3132.0,run,1.91,0.086,0.709,0.876,0.232,0.334,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0292,3132.0,3142.0,run,2.03,0.083,0.816,0.814,0.229,0.483,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0293,3142.0,3152.0,run,2.0,0.102,0.683,0.907,0.403,0.531,0.003,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0294,3152.0,3162.0,run,1.79,0.157,0.837,0.793,0.361,0.617,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0295,3162.0,3172.0,run,1.7,0.034,0.61,0.972,0.184,0.268,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0296,3172.0,3182.0,run,1.76,0.048,0.475,0.965,0.382,0.631,0.001,Sinus Tachycardia; Ventricular Run
+4JF9_w0297,3182.0,3192.0,run,1.83,0.057,0.638,0.943,0.489,0.608,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0298,3192.0,3202.0,run,1.61,0.121,0.559,0.853,0.457,0.544,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0299,3202.0,3212.0,run,1.62,0.079,0.399,0.931,0.217,0.519,0.003,Sinus Tachycardia; Ventricular Run
+4JF9_w0300,3212.0,3222.0,run,1.74,0.079,0.351,0.963,0.466,0.843,0.002,Sinus Tachycardia; Ventricular Run
+4JF9_w0301,3222.0,3232.0,run,1.73,0.108,0.629,0.864,0.444,0.604,0.003,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0302,3232.0,3242.0,run,1.58,0.124,0.726,0.644,0.105,0.506,0.003,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0303,3242.0,3252.0,run,1.65,0.061,0.601,0.979,0.402,0.811,0.001,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0304,3252.0,3262.0,run,1.63,0.166,0.584,0.931,0.337,0.626,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0305,3262.0,3272.0,run,1.58,0.161,0.686,0.714,0.106,0.201,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0306,3272.0,3282.0,run,1.66,0.108,0.731,0.598,0.092,0.284,0.004,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0307,3282.0,3292.0,run,1.57,0.114,0.967,0.762,0.111,0.229,0.008,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0308,3292.0,3302.0,run,1.57,0.226,0.668,0.476,0.166,0.175,0.003,Atrial Fibrillation(suppressed)
+4JF9_w0309,3302.0,3312.0,run,1.47,0.076,0.804,0.943,0.098,0.179,0.004,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0310,3312.0,3322.0,run,1.52,0.113,0.793,0.644,0.245,0.348,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0311,3322.0,3332.0,run,1.65,0.168,0.522,0.672,0.146,0.224,0.003,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0312,3332.0,3342.0,run,1.09,0.138,0.522,0.905,0.384,0.632,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia; Ventricular Run
+4JF9_w0313,3342.0,3352.0,run,1.29,0.131,0.621,0.814,0.139,0.28,0.008,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0314,3352.0,3362.0,run,0.71,0.198,0.202,0.628,0.1,0.238,0.002,Sinus Tachycardia
+4JF9_w0315,3362.0,3372.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0316,3372.0,3382.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0317,3382.0,3392.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0318,3392.0,3402.0,run,0.42,0.271,0.18,0.325,0.029,0.038,0.009,-
+4JF9_w0319,3402.0,3412.0,run,0.86,0.159,0.255,0.508,0.163,0.373,0.005,Sinus Tachycardia
+4JF9_w0320,3412.0,3422.0,run,1.31,0.239,0.461,0.309,0.045,0.167,0.003,-
+4JF9_w0321,3422.0,3432.0,run,1.36,0.292,0.807,0.623,0.105,0.233,0.013,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0322,3432.0,3442.0,run,1.41,0.228,0.614,0.289,0.033,0.103,0.006,Atrial Fibrillation(suppressed)
+4JF9_w0323,3442.0,3452.0,run,1.49,0.186,0.779,0.364,0.046,0.092,0.005,Atrial Fibrillation(suppressed)
+4JF9_w0324,3452.0,3462.0,run,1.5,0.315,0.893,0.225,0.051,0.079,0.008,Atrial Fibrillation(suppressed)
+4JF9_w0325,3462.0,3472.0,run,1.48,0.142,0.974,0.432,0.043,0.084,0.005,Atrial Fibrillation(suppressed)
+4JF9_w0326,3472.0,3482.0,run,1.57,0.104,0.973,0.683,0.064,0.154,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0327,3482.0,3492.0,run,1.51,0.182,0.788,0.695,0.1,0.167,0.009,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0328,3492.0,3502.0,run,1.77,0.154,0.879,0.717,0.052,0.183,0.007,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0329,3502.0,3512.0,run,1.46,0.133,0.874,0.423,0.046,0.078,0.004,Atrial Fibrillation(suppressed)
+4JF9_w0330,3512.0,3522.0,run,1.4,0.139,0.978,0.716,0.056,0.103,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0331,3522.0,3532.0,run,1.35,0.132,0.799,0.661,0.068,0.154,0.006,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0332,3532.0,3542.0,run,1.42,0.243,0.881,0.561,0.08,0.158,0.01,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0333,3542.0,3552.0,run,1.4,0.166,0.781,0.694,0.094,0.185,0.009,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0334,3552.0,3562.0,run,1.42,0.203,0.873,0.684,0.101,0.198,0.008,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0335,3562.0,3572.0,run,1.62,0.214,0.872,0.317,0.029,0.095,0.005,Atrial Fibrillation(suppressed)
+4JF9_w0336,3572.0,3582.0,run,1.56,0.148,0.922,0.738,0.065,0.148,0.005,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0337,3582.0,3592.0,run,1.36,0.113,0.524,0.517,0.055,0.104,0.003,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0338,3592.0,3602.0,run,1.27,0.166,0.854,0.369,0.066,0.123,0.005,Atrial Fibrillation(suppressed)
+4JF9_w0339,3602.0,3612.0,run,1.14,0.109,0.962,0.621,0.108,0.171,0.006,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0340,3612.0,3622.0,run,1.35,0.129,0.454,0.42,0.05,0.119,0.002,-
+4JF9_w0341,3622.0,3632.0,run,1.41,0.214,0.844,0.342,0.093,0.159,0.008,Atrial Fibrillation(suppressed)
+4JF9_w0342,3632.0,3642.0,run,1.27,0.262,0.706,0.419,0.092,0.131,0.01,Atrial Fibrillation(suppressed)
+4JF9_w0343,3642.0,3652.0,run,1.34,0.148,0.713,0.782,0.148,0.302,0.002,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0344,3652.0,3662.0,run,1.13,0.101,0.957,0.588,0.074,0.136,0.012,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0345,3662.0,3672.0,run,0.8,0.083,0.994,0.322,0.028,0.083,0.006,Atrial Fibrillation
+4JF9_w0346,3672.0,3682.0,run,0.77,0.18,0.215,0.144,0.017,0.026,0.0,-
+4JF9_w0347,3682.0,3692.0,run,0.7,0.33,0.167,0.086,0.003,0.018,0.0,-
+4JF9_w0348,3692.0,3702.0,run,0.76,0.218,0.727,0.473,0.064,0.145,0.01,Atrial Fibrillation
+4JF9_w0349,3702.0,3712.0,run,1.18,0.166,0.882,0.793,0.099,0.161,0.01,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0350,3712.0,3722.0,run,1.3,0.328,0.702,0.307,0.058,0.087,0.006,Atrial Fibrillation(suppressed)
+4JF9_w0351,3722.0,3732.0,run,1.2,0.098,0.971,0.499,0.03,0.094,0.014,Atrial Fibrillation(suppressed)
+4JF9_w0352,3732.0,3742.0,run,1.29,0.206,0.935,0.284,0.038,0.087,0.009,Atrial Fibrillation(suppressed)
+4JF9_w0353,3742.0,3752.0,run,1.34,0.096,0.963,0.146,0.027,0.097,0.006,Atrial Fibrillation(suppressed)
+4JF9_w0354,3752.0,3762.0,run,1.29,0.929,0.508,0.202,0.043,0.045,0.015,Bradycardia(suppressed); Atrial Fibrillation(suppressed)
+4JF9_w0355,3762.0,3772.0,run,1.32,0.258,0.846,0.24,0.047,0.042,0.013,Atrial Fibrillation(suppressed)
+4JF9_w0356,3772.0,3782.0,run,0.92,0.258,0.351,0.302,0.044,0.074,0.003,-
+4JF9_w0357,3782.0,3792.0,run,0.77,0.268,0.754,0.311,0.056,0.107,0.026,Atrial Fibrillation
+4JF9_w0358,3792.0,3802.0,run,0.86,0.247,0.44,0.36,0.073,0.096,0.014,-
+4JF9_w0359,3802.0,3812.0,run,1.22,0.123,0.692,0.677,0.09,0.115,0.014,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0360,3812.0,3822.0,run,1.3,0.115,0.942,0.796,0.081,0.09,0.009,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0361,3822.0,3832.0,run,1.44,0.143,0.653,0.707,0.317,0.305,0.01,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0362,3832.0,3842.0,run,1.31,0.162,0.71,0.71,0.207,0.231,0.011,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0363,3842.0,3852.0,run,1.36,0.238,0.697,0.664,0.109,0.114,0.033,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0364,3852.0,3862.0,run,1.22,0.176,0.65,0.577,0.09,0.087,0.024,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0365,3862.0,3872.0,run,1.24,0.133,0.686,0.84,0.134,0.142,0.009,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0366,3872.0,3882.0,run,1.43,0.154,0.531,0.27,0.046,0.063,0.009,Atrial Fibrillation(suppressed)
+4JF9_w0367,3882.0,3892.0,run,1.42,0.123,0.913,0.314,0.052,0.066,0.009,Atrial Fibrillation(suppressed)
+4JF9_w0368,3892.0,3902.0,run,1.5,0.106,0.947,0.323,0.073,0.07,0.012,Atrial Fibrillation(suppressed)
+4JF9_w0369,3902.0,3912.0,run,1.49,0.229,0.41,0.438,0.054,0.076,0.011,-
+4JF9_w0370,3912.0,3922.0,run,1.26,0.137,0.976,0.576,0.071,0.099,0.021,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0371,3922.0,3932.0,run,1.19,0.243,0.47,0.119,0.017,0.097,0.004,-
+4JF9_w0372,3932.0,3942.0,run,1.25,0.225,0.804,0.237,0.102,0.15,0.013,Atrial Fibrillation(suppressed)
+4JF9_w0373,3942.0,3952.0,run,1.23,0.145,0.88,0.113,0.029,0.073,0.008,Atrial Fibrillation(suppressed)
+4JF9_w0374,3952.0,3962.0,run,1.15,0.157,0.811,0.812,0.079,0.105,0.017,Atrial Fibrillation(suppressed); Sinus Tachycardia
+4JF9_w0375,3962.0,3972.0,run,1.17,0.045,0.558,0.052,0.015,0.045,0.0,Atrial Fibrillation(suppressed)
+4JF9_w0376,3972.0,3979.0,run,1.03,0.106,0.954,0.094,0.025,0.039,0.005,Atrial Fibrillation(suppressed)

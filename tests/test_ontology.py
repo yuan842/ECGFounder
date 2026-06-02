@@ -36,6 +36,11 @@ from label_config import (
     is_supported,
     load_tasks,
     scope_indices,
+    FINAL_CLASSIFICATION_SCOPE,
+    FINAL_STATE_CLASSES,
+    SIGNAL_STATE_LABELS,
+    final_classification_scope,
+    in_final_scope,
 )
 
 
@@ -71,6 +76,22 @@ class TestDetectionScope:
         assert require_in_scope("Pause") == "Pause"
         with pytest.raises(ValueError):
             require_in_scope("Isolated Ventricular Beat")
+
+    def test_final_classification_scope_adds_noisy(self):
+        # final scope = 6 detection heads + Noisy(150), without touching detection scope
+        assert final_classification_scope() == FINAL_CLASSIFICATION_SCOPE
+        assert set(FINAL_CLASSIFICATION_SCOPE) == set(DETECTION_SCOPE) | {150}
+        assert FINAL_CLASSIFICATION_SCOPE[150] == "Noisy"
+        assert FINAL_STATE_CLASSES == {150: "Noisy"}
+        # Noisy is a final class but NOT a detection head (hard rule unchanged)
+        assert in_final_scope(150) and not in_scope(150)
+        assert scope_indices() == frozenset({4, 5, 6, 93, 98, 142})   # 6-head rule intact
+        # the state class is a SIGNAL_STATE_LABELS index, never a backbone head
+        assert SIGNAL_STATE_LABELS[150] == "Noisy" and 150 not in DETECTION_SCOPE
+
+    def test_final_state_matches_sqg_noisy_index(self):
+        from overlay.signal_quality_gate import NOISY
+        assert NOISY == 150 and FINAL_CLASSIFICATION_SCOPE[NOISY] == "Noisy"
 
     def test_scope_consistency_invariant_holds(self):
         from label_config import SCOPE_EVENT_TO_HEAD, NON_FZARK_SCOPE_EVENTS

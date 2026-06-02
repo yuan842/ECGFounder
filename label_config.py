@@ -423,6 +423,26 @@ DETECTION_SCOPE: dict[int, str] = {
 # must agree with FZARK_LABEL_MAP. Enforced by _assert_scope_consistency() below.
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Final-classification scope  =  6 detection events  +  signal-state classes
+# ═══════════════════════════════════════════════════════════════════════════
+# The DETECTION_SCOPE hard rule (exactly 6 backbone heads) is UNCHANGED. "Noisy"
+# is NOT a backbone detection head — it is a signal-state produced upstream by the
+# S0 Signal-Quality Gate (overlay.signal_quality_gate, index 150 == NOISY there).
+# For the *final* per-sample classification, a window is labelled either one of the
+# 6 detected arrhythmias OR the terminal state "Noisy" (uninterpretable, detection
+# skipped). So Noisy joins the FINAL classification vocabulary without becoming a
+# detection target — the 6-head rule and its import assertion are not affected.
+#
+#   detection target   : 6 fzark heads        (model predicts)        — hard rule
+#   final classification: 6 heads + Noisy(150) (model + SQG)          — this scope
+#
+# To add another terminal signal-state later (e.g. High Motion 151), add it here
+# (it must be a SIGNAL_STATE_LABELS index, never a backbone head).
+FINAL_STATE_CLASSES: dict[int, str] = {150: "Noisy"}   # from SQG; ⊂ SIGNAL_STATE_LABELS
+FINAL_CLASSIFICATION_SCOPE: dict[int, str] = {**DETECTION_SCOPE, **FINAL_STATE_CLASSES}
+
+
 # Per-head detection thresholds — override the 0.5 default for specific heads.
 # Heads absent here use DEFAULT_THRESHOLD (0.5).
 #
@@ -462,6 +482,20 @@ def scope_indices() -> frozenset[int]:
 def scope_events() -> frozenset[str]:
     """The 6 in-scope fzark event names (the global hard rule)."""
     return SCOPE_EVENTS
+
+
+def final_classification_scope() -> dict[int, str]:
+    """Final per-sample classes: the 6 detection heads + signal-states (Noisy).
+
+    Superset of DETECTION_SCOPE used for terminal classification, where a window
+    is one of the 6 arrhythmias or 'Noisy' (uninterpretable). Does NOT change the
+    detection hard rule — Noisy(150) is an SQG signal-state, not a backbone head."""
+    return dict(FINAL_CLASSIFICATION_SCOPE)
+
+
+def in_final_scope(index: int) -> bool:
+    """True iff `index` is a valid final-classification class (detection or state)."""
+    return index in FINAL_CLASSIFICATION_SCOPE
 
 
 def event_in_scope(event_name: str) -> bool:
@@ -557,6 +591,18 @@ def _assert_scope_consistency() -> None:
                 f"Scope label {ev!r} head {head} disagrees with FZARK_LABEL_MAP "
                 f"({FZARK_LABEL_MAP.get(ev)})"
             )
+    # final-classification scope = detection heads + signal-states only; the state
+    # classes must be SIGNAL_STATE_LABELS (never backbone heads ≤149) and must extend
+    # — not replace — the 6-head detection scope.
+    for idx, name in FINAL_STATE_CLASSES.items():
+        if idx in DETECTION_SCOPE or idx < 150:
+            raise AssertionError(f"Final-state class {name!r} ({idx}) must not be a backbone head")
+        if SIGNAL_STATE_LABELS.get(idx) != name:
+            raise AssertionError(
+                f"Final-state class {name!r} ({idx}) must match SIGNAL_STATE_LABELS "
+                f"({SIGNAL_STATE_LABELS.get(idx)})")
+    if set(FINAL_CLASSIFICATION_SCOPE) != set(DETECTION_SCOPE) | set(FINAL_STATE_CLASSES):
+        raise AssertionError("FINAL_CLASSIFICATION_SCOPE must be DETECTION_SCOPE ∪ FINAL_STATE_CLASSES")
 
 
 _assert_scope_consistency()

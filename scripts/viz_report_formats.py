@@ -26,8 +26,9 @@ TMAX = mins(EF.t_end_s.max())
 ACT_C = {"baseline":"#9FB6C9","lift":"#C9B79F","greetings":"#C9B79F","gesticulate":"#C9B79F",
          "jumps":"#E0A96D","walk_before":"#7FB07F","run":"#E06D6D","walk_after":"#7FB07F","unknown":"#DDDDDD"}
 ST_C  = {"SINUS":"#3C9A5F","BIGEMINY":"#E0A33D","TRIGEMINY":"#D2691E","VT":"#C0392B"}
+# Scope heads only (Normal/NSR removed from DETECTION_SCOPE 2026-06-01 → no p_2 column).
 EF_HEADS = [(6,"Sinus Tachy","#1C7293"),(5,"AFib","#065A82"),(98,"V Run (VT)","#C0392B"),
-            (93,"SV Run","#8E6FB0"),(4,"Bradycardia","#5A8F69"),(142,"Pause","#B07F2A"),(2,"Normal","#888888")]
+            (93,"SV Run","#8E6FB0"),(4,"Bradycardia","#5A8F69"),(142,"Pause","#B07F2A")]
 
 fig, ax = plt.subplots(3, 1, figsize=(15, 8.2), sharex=True,
                        gridspec_kw={"height_ratios":[0.6, 0.9, 3.4], "hspace":0.28})

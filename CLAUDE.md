@@ -37,6 +37,16 @@ target — anywhere in code, evals, or reports:**
 - **To change the scope**: edit `SCOPE_EVENTS` **and** `DETECTION_SCOPE` together, then update
   `res/GLOBAL_LABEL_MAP.md` (§ hard rule) and this file.
 
+**Detection scope ≠ final-classification scope.** The 6-head detection scope above is the
+hard rule and is unchanged. For terminal per-sample classification there is a separate
+`label_config.FINAL_CLASSIFICATION_SCOPE = DETECTION_SCOPE + {150: "Noisy"}` (helpers
+`final_classification_scope()`, `in_final_scope()`). **Noisy (150) is a signal-STATE** emitted
+by the S0 Signal-Quality Gate (`overlay.signal_quality_gate`, index 150) when a window is
+uninterpretable and detection is skipped — it is **not** a backbone detection head and never
+enters `DETECTION_SCOPE`. The import assertion enforces that any `FINAL_STATE_CLASSES` entry is
+a `SIGNAL_STATE_LABELS` index (≥150), never a head, so the 6-head rule cannot be diluted. To add
+another terminal state later (e.g. High Motion 151), add it to `FINAL_STATE_CLASSES` only.
+
 ## ⛔ GLOBAL RULE — never commit or push datasets
 
 Raw datasets, signal dumps, and model weights **must never be committed or pushed.**

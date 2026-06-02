@@ -24,7 +24,7 @@ HRS     = [30.0, 56.2, 56.3, 56.4, 70.0, 120.0]
 
 
 def test_equivalence():
-    pipe = FPSuppressionPipeline(device="fzark")
+    pipe = FPSuppressionPipeline(device="fzark", sqi=True)   # validate full SQI+motion algo
     n = 0
     for ev in EVENTS:
         for mot in MOTIONS:
@@ -42,7 +42,7 @@ def test_equivalence():
 
 def test_missing_feature_fail_open():
     """Missing feature → gate passes (fail-open), matching production."""
-    pipe = FPSuppressionPipeline(device="fzark")
+    pipe = FPSuppressionPipeline(device="fzark", sqi=True)
     for ev in EVENTS:
         feats = {}  # nothing present
         prod_keep, _, _ = _apply_rules(ev, feats)
@@ -66,7 +66,7 @@ def test_families_independent():
 
 def test_vtrig_split_is_and():
     """V-Trig = (motion>=24) AND (snr>1.2) — both halves must hold to keep."""
-    pipe = FPSuppressionPipeline(device="fzark")
+    pipe = FPSuppressionPipeline(device="fzark", sqi=True)   # V-Trig uses motion∧snr
     cases = {
         (30.0, 2.0): True,    # both pass → keep
         (30.0, 1.0): False,   # snr fails → drop

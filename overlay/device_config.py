@@ -31,6 +31,12 @@ class DeviceConfig:
         """Per-head decision threshold for every scope head (base heads → 0.5)."""
         return {h: float(c.get("threshold", 0.5)) for h, c in self.heads.items()}
 
+    def base_heads(self) -> list[int]:
+        """Heads routed through the raw backbone (source=='base'). On this device
+        they are *uncalibrated* (no events to fit a threshold) — the L2 arbiter
+        excludes them from rate-exclusion arbitration."""
+        return [h for h, c in self.heads.items() if str(c.get("source", "")) == "base"]
+
 
 def load_device_config(path: str) -> DeviceConfig:
     with open(path) as f:

@@ -27,6 +27,7 @@ from device_utils import resolve_device
 from sqi import compute_sqi
 import label_config as L
 from fp_suppression import FPSuppressionPipeline
+from overlay.signal_quality_gate import SignalQualityGate
 
 SEG = "res/move_segmented"
 OUT = "res/recording_reports"
@@ -80,13 +81,13 @@ def main():
 
     # preprocess + per-window features
     prep = ECGPreprocessor(powerline_hz=50, normalize="winsorize")
-    X, hr, snr, hfn = [], [], [], []
+    X, hr, snr, hfn, drift = [], [], [], [], []
     for _, r in sub.iterrows():
         raw = np.load(os.path.join(SEG, r["ecg_path"])).astype(np.float64)
         X.append(prep.process(raw, fs_in=FS))
         panel = compute_sqi(raw, FS, acc_xyz=None)
         hr.append(panel.get("mean_hr_bpm", np.nan)); snr.append(panel.get("snr_proxy", np.nan))
-        hfn.append(panel.get("hf_noise_ratio", np.nan))
+        hfn.append(panel.get("hf_noise_ratio", np.nan)); drift.append(panel.get("baseline_drift", np.nan))
     X = torch.stack(X).to(resolve_device())
 
     model = load_ecgfounder(resolve_device()); model.eval()
@@ -95,31 +96,42 @@ def main():
         for s in range(0, len(X), 128):
             probs[s:s+128] = torch.sigmoid(model(X[s:s+128])).cpu().numpy()
 
-    # scope detection + FP suppression per window
-    pipe = FPSuppressionPipeline(a.device)
+    # S0 signal-quality gate (global policy, default ON) + motion FP suppression.
+    # Noisy windows (low SNR or high baseline drift) are classified Noisy and skip
+    # detection entirely; the FP-suppression SQI family is now off (motion only).
+    sqg = SignalQualityGate()
+    pipe = FPSuppressionPipeline(a.device)                    # motion-only (sqi default OFF)
     t0 = sub.real_start_s.to_numpy(float); t1 = sub.real_end_s.to_numpy(float)
     motion = sub.chest_motion_mg.to_numpy(float)
-    fired = {h: np.zeros(len(sub), bool) for h in SCOPE}      # after suppression
-    raw_fired = {h: np.zeros(len(sub), bool) for h in SCOPE}  # before suppression
+    fired = {h: np.zeros(len(sub), bool) for h in SCOPE}      # after gate + suppression
+    raw_fired = {h: np.zeros(len(sub), bool) for h in SCOPE}  # before gate + suppression
+    noisy_gated = np.zeros(len(sub), bool)
     rows = []
     for i in range(len(sub)):
         feats = {"mean_motion": motion[i], "mean_hr_bpm": hr[i], "snr_proxy": snr[i],
                  "hf_noise": hfn[i]}
         row = {"window_id": sub.window_id[i], "t_start_s": round(t0[i], 1), "t_end_s": round(t1[i], 1),
                "activity": sub.activity_label[i], "motion_mg": round(float(motion[i]), 2)}
+        # S0 SQI gate — classify Noisy and skip detection
+        g = sqg.gate(None, sqi={"snr_proxy": snr[i], "baseline_drift": drift[i]})
+        noisy = not g.passed
+        noisy_gated[i] = noisy
         det = []
         for h in SCOPE:
-            p = float(probs[i, h]); thr = L.head_threshold(h)
-            rf = p >= thr; raw_fired[h][i] = rf
+            p = float(probs[i, h]); row[f"p_{h}"] = round(p, 3)
+            if noisy:
+                continue                                      # skip detection on Noisy
+            rf = p >= L.head_threshold(h); raw_fired[h][i] = rf
             keep = pipe.suppress(HEAD2EVENT[h], feats).keep if rf else False
             fired[h][i] = rf and keep
-            row[f"p_{h}"] = round(p, 3)
             if rf and not keep:
                 det.append(f"{HEAD2EVENT[h]}(suppressed)")
             elif fired[h][i]:
                 det.append(HEAD2EVENT[h])
-        row["detections"] = "; ".join(det) if det else "-"
+        row["noisy_gated"] = bool(noisy)
+        row["detections"] = "Noisy (gated)" if noisy else ("; ".join(det) if det else "-")
         rows.append(row)
+    print(f"S0 SQG: {int(noisy_gated.sum())}/{len(sub)} windows classified Noisy → detection skipped")
     win_df = pd.DataFrame(rows)
     win_df.to_csv(f"{outdir}/windows.csv", index=False)
 
