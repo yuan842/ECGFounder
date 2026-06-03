@@ -500,7 +500,7 @@ def render_segment_timeline(rows: list[dict]) -> None:
                "Pred: 🔴 AFib fired · 🟢 no fire · ⚪ quality-gated")
 
 
-def render_eval_summary(rows: list[dict], m: dict) -> None:
+def render_eval_summary(rows: list[dict], m: dict, scope_label: str = "recording") -> None:
     st.subheader("AFib detection performance · 30-s segments")
     st.caption(
         f"{len(rows)} segments · scored {m['n_scored']} "
@@ -525,8 +525,9 @@ def render_eval_summary(rows: list[dict], m: dict) -> None:
     st.markdown("**Confusion matrix** (segment-level)")
     st.table(conf)
     if m["tn"] + m["fp"] == 0:
-        st.info("No negative (non-AFib) segments in this block — specificity/PPV "
-                "are undefined. This recording is essentially pure-AFib.")
+        st.info(f"No negative (non-AFib) segments in this {scope_label} — "
+                f"specificity/PPV are undefined. This {scope_label} is "
+                "essentially pure-AFib.")
 
 
 def render_segment_table(rows: list[dict]) -> None:
@@ -545,6 +546,47 @@ def render_segment_table(rows: list[dict]) -> None:
 
 def _pct(x: float) -> str:
     return "—" if x is None or (isinstance(x, float) and np.isnan(x)) else f"{x * 100:.1f}%"
+
+
+def _num(x: float) -> float | None:
+    return None if x is None or (isinstance(x, float) and np.isnan(x)) else round(x, 3)
+
+
+def render_pooled_summary(results: list[dict]) -> None:
+    """Aggregate per-segment results across ≥2 annotated blocks into one study."""
+    n = len(results)
+    pooled_rows = [r for res in results for r in res["rows"]]
+    pooled_m = eval_confusion(pooled_rows)
+
+    total_s = sum(res["sig"].shape[0] / res["fs"] for res in results)
+    st.markdown(f"### Pooled study · {n} recordings · {total_s / 60:.0f} min total")
+    render_eval_summary(pooled_rows, pooled_m, scope_label="study")
+
+    st.markdown("**Per-recording breakdown**")
+    rows_tbl = [{
+        "recording": res["name"],
+        "segments": len(res["rows"]),
+        "scored": res["m"]["n_scored"],
+        "TP": res["m"]["tp"], "FN": res["m"]["fn"],
+        "FP": res["m"]["fp"], "TN": res["m"]["tn"],
+        "sens": _num(res["m"]["sens"]), "spec": _num(res["m"]["spec"]),
+        "PPV": _num(res["m"]["ppv"]), "F1": _num(res["m"]["f1"]),
+    } for res in results]
+    rows_tbl.append({
+        "recording": "▸ POOLED", "segments": len(pooled_rows),
+        "scored": pooled_m["n_scored"],
+        "TP": pooled_m["tp"], "FN": pooled_m["fn"],
+        "FP": pooled_m["fp"], "TN": pooled_m["tn"],
+        "sens": _num(pooled_m["sens"]), "spec": _num(pooled_m["spec"]),
+        "PPV": _num(pooled_m["ppv"]), "F1": _num(pooled_m["f1"]),
+    })
+    st.dataframe(pd.DataFrame(rows_tbl), use_container_width=True, hide_index=True)
+
+    for res in results:
+        with st.expander(f"{res['name']} · detail"):
+            render_segment_timeline(res["rows"])
+            render_overview_waveform(res["sig"], res["fs"])
+            render_segment_table(res["rows"])
 
 
 # ─── main entry point ────────────────────────────────────────────────────
@@ -588,33 +630,63 @@ def run_detection_view(name: str, raw: bytes, model, device) -> None:
     )
 
 
-def run_evaluation_view(name: str, raw: bytes) -> None:
-    """Whole-record AFib evaluation of an annotated 10-min VVL block vs its GT."""
-    st.info("📋 Annotated 10-min block detected — running full-record AFib evaluation.")
-    prep = get_preprocessor()
-    detector = get_detector()
+def _score_blocks(blocks: list[tuple[str, bytes]], prep, detector) -> list[dict]:
+    """Score each annotated block, sharing one progress bar over all blocks."""
     bar = st.progress(0.0, text="Scoring 30-s segments…")
+    results: list[dict] = []
+    total = len(blocks)
     try:
-        rows, sig, fs = evaluate_block(
-            raw, prep, detector,
-            progress=lambda frac: bar.progress(frac, text=f"Scoring segments… {frac*100:.0f}%"),
-        )
+        for bi, (name, raw) in enumerate(blocks):
+            def prog(frac, bi=bi, name=name):
+                overall = (bi + frac) / total
+                bar.progress(overall, text=f"Scoring {name} … {overall * 100:.0f}%")
+            rows, sig, fs = evaluate_block(raw, prep, detector, progress=prog)
+            for r in rows:
+                r["block"] = name
+            results.append(dict(name=name, rows=rows, sig=sig, fs=fs,
+                                m=eval_confusion(rows)))
     except (ValueError, RuntimeError, KeyError) as exc:
         bar.empty()
         st.error(f"Could not evaluate block: {exc}")
         st.stop()
     bar.empty()
+    return results
 
-    m = eval_confusion(rows)
-    render_eval_summary(rows, m)
-    render_segment_timeline(rows)
-    render_overview_waveform(sig, fs)
-    render_segment_table(rows)
-    st.caption(
-        f"{name} · npz · {sig.shape[0]} samples @ {fs} Hz · "
-        f"{sig.shape[0] / fs:.0f} s · {len(rows)} segments × {WIN_SECONDS:.0f}-s windows · "
-        "AFib head (5) only"
-    )
+
+def run_evaluation_view(blocks: list[tuple[str, bytes]]) -> None:
+    """AFib evaluation of one or more annotated 10-min VVL blocks vs their GT.
+
+    One block → single-record view. Two or more → pooled study with an
+    aggregate summary plus a per-recording breakdown.
+    """
+    if len(blocks) == 1:
+        st.info("📋 Annotated 10-min block detected — running full-record AFib evaluation.")
+    else:
+        st.info(f"📋 {len(blocks)} annotated blocks detected — running a pooled "
+                "AFib evaluation study.")
+    prep = get_preprocessor()
+    detector = get_detector()
+    results = _score_blocks(blocks, prep, detector)
+
+    if len(results) == 1:
+        res = results[0]
+        rows, sig, fs = res["rows"], res["sig"], res["fs"]
+        render_eval_summary(rows, res["m"])
+        render_segment_timeline(rows)
+        render_overview_waveform(sig, fs)
+        render_segment_table(rows)
+        st.caption(
+            f"{res['name']} · npz · {sig.shape[0]} samples @ {fs} Hz · "
+            f"{sig.shape[0] / fs:.0f} s · {len(rows)} segments × "
+            f"{WIN_SECONDS:.0f}-s windows · AFib head (5) only"
+        )
+    else:
+        render_pooled_summary(results)
+        n_seg = sum(len(res["rows"]) for res in results)
+        st.caption(
+            f"{len(results)} recordings · {n_seg} segments × {WIN_SECONDS:.0f}-s "
+            "windows · positive=Has Afibs, negative=No Afibs · AFib head (5) only"
+        )
 
 
 def main() -> None:
@@ -638,25 +710,42 @@ def main() -> None:
             "- **ZIP** — WFDB `.dat` + `.hea` pair.\n"
             "- **NPZ** — NumPy archive with a `signal` array (+ optional `fs`); "
             "e.g. VVL10min blocks. Long records use the center 10 s.\n"
-            "  - With a `seg_majority` annotation → **full-record AFib evaluation**."
+            "  - With a `seg_majority` annotation → **full-record AFib evaluation**.\n"
+            "  - Upload **2+ annotated blocks** → **pooled study** with an "
+            "aggregate summary."
         )
 
     uploaded = st.file_uploader(
-        "Drop or browse an ECG file",
+        "Drop or browse ECG file(s)",
         type=["csv", "json", "zip", "npz"],
-        accept_multiple_files=False,
-        help="CSV (raw signal, 500 Hz), JSON (fzark sidecar), ZIP (.dat + .hea), "
-             "or NPZ (NumPy archive with a 'signal' array; annotated VVL10min "
-             "blocks run a full-record evaluation). Max 25 MB.",
+        accept_multiple_files=True,
+        help="One file → detection / single-block evaluation. Two or more "
+             "annotated .npz blocks → pooled evaluation study. CSV (500 Hz), "
+             "JSON (fzark sidecar), ZIP (.dat + .hea), NPZ (NumPy archive). "
+             "Max 25 MB each.",
     )
-    if uploaded is None:
+    if not uploaded:
         st.stop()
 
-    raw = uploaded.getvalue()
-    if uploaded.name.lower().endswith(".npz") and npz_has_annotation(raw):
-        run_evaluation_view(uploaded.name, raw)
+    files = [(u.name, u.getvalue()) for u in uploaded]
+
+    if len(files) == 1:
+        name, raw = files[0]
+        if name.lower().endswith(".npz") and npz_has_annotation(raw):
+            run_evaluation_view([(name, raw)])
+        else:
+            run_detection_view(name, raw, model, device)
     else:
-        run_detection_view(uploaded.name, raw, model, device)
+        not_annotated = [n for n, r in files
+                         if not (n.lower().endswith(".npz") and npz_has_annotation(r))]
+        if not_annotated:
+            st.error(
+                "A pooled study needs 2+ annotated .npz blocks (each with a "
+                "`seg_majority` array). These are not annotated blocks: "
+                + ", ".join(not_annotated)
+            )
+            st.stop()
+        run_evaluation_view(files)
 
 
 if __name__ == "__main__":
