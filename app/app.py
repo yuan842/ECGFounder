@@ -34,6 +34,8 @@ from preprocessing import ECGPreprocessor
 
 TARGET_FS = 500
 TARGET_LEN = 5000
+MAX_UPLOAD_MB = 100   # per-file size cap (also enforced by .streamlit maxUploadSize)
+MAX_FILES = 2         # at most 2 files (single record, or a 2-record pooled study)
 
 
 # ─── one-time setup (cached across reruns and sessions) ──────────────────
@@ -711,7 +713,7 @@ def main() -> None:
             "- **NPZ** — NumPy archive with a `signal` array (+ optional `fs`); "
             "e.g. VVL10min blocks. Long records use the center 10 s.\n"
             "  - With a `seg_majority` annotation → **full-record AFib evaluation**.\n"
-            "  - Upload **2+ annotated blocks** → **pooled study** with an "
+            "  - Upload **2 annotated blocks** → **pooled study** with an "
             "aggregate summary."
         )
 
@@ -719,12 +721,24 @@ def main() -> None:
         "Drop or browse ECG file(s)",
         type=["csv", "json", "zip", "npz"],
         accept_multiple_files=True,
-        help="One file → detection / single-block evaluation. Two or more "
-             "annotated .npz blocks → pooled evaluation study. CSV (500 Hz), "
-             "JSON (fzark sidecar), ZIP (.dat + .hea), NPZ (NumPy archive). "
-             "Max 25 MB each.",
+        help="One file → detection / single-block evaluation. Two annotated "
+             ".npz blocks → pooled evaluation study. CSV (500 Hz), JSON (fzark "
+             "sidecar), ZIP (.dat + .hea), NPZ (NumPy archive). "
+             f"Max {MAX_UPLOAD_MB} MB per file, up to {MAX_FILES} files.",
     )
     if not uploaded:
+        st.stop()
+
+    if len(uploaded) > MAX_FILES:
+        st.error(f"Please upload at most {MAX_FILES} files (got {len(uploaded)}). "
+                 "A pooled study compares 2 recordings.")
+        st.stop()
+
+    oversized = [f"{u.name} ({u.size / 1024 / 1024:.0f} MB)"
+                 for u in uploaded if u.size > MAX_UPLOAD_MB * 1024 * 1024]
+    if oversized:
+        st.error(f"Each file must be ≤ {MAX_UPLOAD_MB} MB. Too large: "
+                 + ", ".join(oversized))
         st.stop()
 
     files = [(u.name, u.getvalue()) for u in uploaded]
@@ -740,7 +754,7 @@ def main() -> None:
                          if not (n.lower().endswith(".npz") and npz_has_annotation(r))]
         if not_annotated:
             st.error(
-                "A pooled study needs 2+ annotated .npz blocks (each with a "
+                "A pooled study needs 2 annotated .npz blocks (each with a "
                 "`seg_majority` array). These are not annotated blocks: "
                 + ", ".join(not_annotated)
             )

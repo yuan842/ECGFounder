@@ -2,7 +2,7 @@
 port = 8000
 address = "0.0.0.0"
 headless = true
-maxUploadSize = 25
+maxUploadSize = 100
 
 [theme]
 primaryColor = "#2563eb"
