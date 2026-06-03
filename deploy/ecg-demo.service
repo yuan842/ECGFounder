@@ -5,7 +5,7 @@ After=network-online.target
 [Service]
 WorkingDirectory=/home/ubuntu/ECGFounder
 Environment=PYTHONPATH=/home/ubuntu/ECGFounder
-ExecStart=/usr/bin/python3 -m streamlit run app/app.py \
+ExecStart=/home/ubuntu/ECGFounder/.venv/bin/python -m streamlit run app/app.py \
     --server.address 0.0.0.0 \
     --server.port 8000 \
     --server.maxUploadSize 100 \
