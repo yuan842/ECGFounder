@@ -8,7 +8,7 @@ Environment=PYTHONPATH=/home/ubuntu/ECGFounder
 ExecStart=/usr/bin/python3 -m streamlit run app/app.py \
     --server.address 0.0.0.0 \
     --server.port 8000 \
-    --server.maxUploadSize 25 \
+    --server.maxUploadSize 100 \
     --browser.gatherUsageStats false \
     --server.headless true
 Restart=always
