@@ -743,6 +743,22 @@ def main() -> None:
 
     files = [(u.name, u.getvalue()) for u in uploaded]
 
+    # Gate inference behind an explicit button. Reset the trigger whenever the
+    # uploaded selection changes so a new file doesn't auto-run stale results.
+    upload_sig = tuple((u.name, u.size) for u in uploaded)
+    if st.session_state.get("upload_sig") != upload_sig:
+        st.session_state["upload_sig"] = upload_sig
+        st.session_state["detect_triggered"] = False
+
+    names = " + ".join(n for n, _ in files)
+    queued = ("pooled study" if len(files) > 1 else "single record")
+    st.caption(f"Ready: {names} · {queued}")
+    if st.button("🫀 Detect AFib", type="primary", use_container_width=True):
+        st.session_state["detect_triggered"] = True
+    if not st.session_state.get("detect_triggered"):
+        st.info("Click **Detect AFib** to run analysis on the uploaded file(s).")
+        st.stop()
+
     if len(files) == 1:
         name, raw = files[0]
         if name.lower().endswith(".npz") and npz_has_annotation(raw):
