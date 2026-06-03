@@ -201,6 +201,31 @@ python3 -c "from checkpoints import load_ecgfounder; from device_utils import re
 
 Note: t3.large has no GPU — `resolve_device()` returns `cpu`. Inference is ~500 ms–1 s per request, still fast enough for the demo.
 
+### C.4b Copy the locally-trained weights (NOT in git, NOT on Hugging Face)
+
+`load_ecgfounder()` above only fetches the **base** backbone from Hugging Face. The demo also needs two classes of weights that are **gitignored** (the no-weights rule) **and not downloadable** — so a fresh clone is missing them. Without these, the single-window detection view may load, but clicking **Detect AFib** on a `.npz` (the evaluation path, which uses `ScopedDetector`) fails with e.g.:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'res/scope_overlay/fuzzySL.pth'
+```
+
+Required out-of-band artifacts:
+
+| Path | Size | Source |
+|---|---|---|
+| `checkpoint/1_lead_ECGFounder_fuzzy.pth` | ~353 MB | locally fine-tuned (fuzzylead2) |
+| `res/scope_overlay/*.pth` | ~6 KB each | locally-trained L1 projection heads |
+
+Copy them **from a machine that already has them** (e.g. your laptop's clone) using the helper script — run it locally, not on the EC2:
+
+```bash
+# On your laptop, from a clone that has the weights:
+deploy/sync-weights.sh ubuntu@<ec2-host>            # uses ~/.ssh/ecg-demo, ~/ECGFounder
+# or: deploy/sync-weights.sh ubuntu@<ec2-host> ~/.ssh/ecg-demo ~/ECGFounder
+```
+
+The script preflights the local files, scps them to the host, and prints a verification listing. After it succeeds, restart the service (`sudo systemctl restart ecg-demo`).
+
 ### C.5 Sanity-check the algorithm code works on this box
 
 ```bash
@@ -247,7 +272,7 @@ Environment=PYTHONPATH=/home/ubuntu/ECGFounder
 ExecStart=/usr/bin/python3 -m streamlit run app/app.py \
     --server.address 0.0.0.0 \
     --server.port 8000 \
-    --server.maxUploadSize 25 \
+    --server.maxUploadSize 100 \
     --browser.gatherUsageStats false \
     --server.headless true
 Restart=always
